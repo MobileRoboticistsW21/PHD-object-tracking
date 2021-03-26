@@ -36,3 +36,6 @@ build/*
 
 # Data directory
 data/*
+
+# vscode
+.vscode

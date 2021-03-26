@@ -6,64 +6,82 @@
 
 using namespace std;
 using namespace arma;
+
 struct Particle{
    vec state{4};
    mat P{4,4};
    double weight; 
 };
+
 struct PHDupdate{
     vec eta{4};
     mat S{2,2};
     mat K{4,4};
 };
 
+// Notice (priorty Medium): This should house the settings needed for the filter eventually. 
+struct PHD_filter_parameters
+{};
+
 class phd_filter{
     public:
-        phd_filter(string);
-        void run_filter();
-    private:
-        // Private functions
-        double BirthWeight(vec);
-        vector<Particle> CarBirth();
-        Particle SpawnMotionModel(Particle);
-        double SpawnWeight(vec,vec);
-        Particle ExistingObjectMotionModel(Particle);
-        tuple <PHDupdate,mat> UpdatePHDComponents(Particle);
-        Particle ObjectMissedDetection(Particle);
-        Particle DetectedObjectUpdate(Particle,vec,PHDupdate);
-        void PositionSensor();
-        void GroundTruth();
-        void RCNNSensor();
-        void NormalizeWeights();
-        void PruningAndMerging();
-        void MultiTargetStateExtraction();
+        phd_filter(string);  // Notice (priority low): currently this hardcodes settings, that should be changed
+
+        void propagate_states(void);  // Notice (priority high):
+
+        vector<Particle> get_x_k_(){ return x_k_; }  //Notice (priority Low): not ideal, needs changing.
+
+        void setup_for_next_iteration() // Notice (priorty medium): eventually delete this... should not be needed
+        { 
+            phd_updates_.clear();
+        }
+
+
+        //// MAIN FUNCTIONS ////////////////////////////////////////////////////////////////////////////////////////////
+        // Notice: Most of those functions need to be called as a group.
+        //          they should be made private and an encompassing function should be put in place. 
+
+        void propose_spawned_targets(void); // Notice (priority Medium-high) Currently not implemented
+        void propose_new_born_targets(void); // Notice (priority Medium-high)Currently not implemented
+
+        void construct_phd_update_components(); // Notice (priority high): needs revew and revamp
         
+        void sensor_update(mat z_); // Notice (priority high): needs review and revamp
+        void FAILING_sensor_update_for_object_missing_detections(); // Notice (priority high): needs review and revamp
+        void NormalizeWeights(); // Notice (priority high): needs review and revamp
+
+        void PruningAndMerging(); // Notice (priority high): needs review and revamp
+
+        vector<Particle> extract_target_states(); // Notice (priority high): needs review and revamp
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    private:
+        vector<Particle> CarBirth();
+
+
+        ////////////////////////////////////////////////////////////////////////////////
+        // Notice (priority medium): Those functions need massive revamp
+        //              most of them can be intregrated with the functions that call 
+        ////////////////////////////////////////////////////////////////////////////////
+        double BirthWeight(vec); // used in propose_new_born_targets
+        Particle SpawnMotionModel(Particle); // used in propose_spawned_targets
+        double SpawnWeight(vec,vec); // used in propose_spawned_targets
+        tuple <PHDupdate,mat> UpdatePHDComponent(Particle); // used in construct_phd_update_components
+        Particle ObjectMissedDetection(Particle);  // used in FAILING_sensor_update_for_object_missing_detections
+        ////////////////////////////////////////////////////////////////////////////////
+
         // Member variables
-        int J_k_;
-        int J_beta_;
-        int J_gamma_;
-        int sigma_v_;
-        double p_s_;
-        double p_d_;
-        double T_;
-        int U_;
-        int J_max_;
-        int i_;
+        int J_k_, J_beta_, J_gamma_, sigma_v_;
+        double p_s_, p_d_, T_;
+        int U_, J_max_, i_;
         mat mu_gamma_;
-        int t_steps_;
-        vector<Particle> x_k_;
+        
+        vector<Particle> x_k_;  // states
         vector<PHDupdate> phd_updates_;
-        vector<Particle> x_pred_;
-        mat z_;
-        mat g_;
-        int t_;
+
         mat F_{4,4};
         mat H_{4,4};
         vector<mat> bbox_;
-        vector<vector<vec>> trajectory_;
-        vector<vector<double>> trajectoryx_;
-        vector<vector<double>> trajectoryy_;
-        int type_;
 
         // Constant variables
         mat kInit_covP={{100,0,0,0},{0,100,0,0},{0,0,10,0},{0,0,0,10}};
