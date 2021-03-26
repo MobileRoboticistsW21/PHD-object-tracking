@@ -15,10 +15,8 @@ include_directories(${PYTHON_INCLUDE_DIRS})
 
 # Local source files here
 SET(TARGET_SRC
-
     Normalize_weights.cpp
     Pruning_and_Merging.cpp
-
     phd_filter.cpp
 )
 

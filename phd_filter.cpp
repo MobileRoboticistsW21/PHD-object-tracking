@@ -88,6 +88,7 @@ tuple <PHDupdate,mat> phd_filter::UpdatePHDComponent(Particle tracked_target){
 
 void phd_filter::construct_phd_update_components()
 {
+    phd_updates_.clear();
     for (auto& x : x_k_)
     {
         tuple<PHDupdate, mat> target_update;
@@ -138,9 +139,9 @@ void phd_filter::sensor_update(mat detections)
     vector<Particle> x_new;
     for (int z_idx = 0; z_idx < detections.n_rows; z_idx++)
     {
+        vec z = arma::vectorise(detections.row(z_idx));
         for (int x_idx = 0; x_idx < x_k_.size(); x_idx++)
         {
-            vec z = arma::vectorise(detections.row(z_idx));
             Particle target = x_k_[x_idx];
             PHDupdate detected_update = phd_updates_[x_idx];
             

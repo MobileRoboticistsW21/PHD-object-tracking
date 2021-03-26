@@ -1,3 +1,5 @@
+#pragma once
+
 #include<iostream>
 #include<string>
 #include<vector>
@@ -30,11 +32,6 @@ class phd_filter{
         void propagate_states(void);  // Notice (priority high):
 
         vector<Particle> get_x_k_(){ return x_k_; }  //Notice (priority Low): not ideal, needs changing.
-
-        void setup_for_next_iteration() // Notice (priorty medium): eventually delete this... should not be needed
-        { 
-            phd_updates_.clear();
-        }
 
 
         //// MAIN FUNCTIONS ////////////////////////////////////////////////////////////////////////////////////////////

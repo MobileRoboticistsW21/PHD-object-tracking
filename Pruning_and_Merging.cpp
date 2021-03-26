@@ -22,7 +22,7 @@ void phd_filter::PruningAndMerging(){
             }
         }
         vector<Particle> L;
-        cout<<I[j].weight<<endl;
+        // cout<< "particle weight: " << I[j].weight<<endl;
         for(auto iter:I){
            double Mah_d= as_scalar((iter.state-I[j].state).t()*
            iter.P.i()*(iter.state-I[j].state));
