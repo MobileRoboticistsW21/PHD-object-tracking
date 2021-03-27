@@ -10,9 +10,9 @@ using namespace std;
 using namespace arma;
 
 struct Particle{
-   vec state{4};
-   mat P{4,4};
-   double weight; 
+   vec state{4};  // 4x1 vector [x, y, Vx, Vy]
+   mat P{4,4}; // 4x4 covariance
+   double weight; // particle weight
 };
 
 struct PHDupdate{
@@ -29,8 +29,6 @@ class phd_filter{
     public:
         phd_filter(string);  // Notice (priority low): currently this hardcodes settings, that should be changed
 
-        void propagate_states(void);  // Notice (priority high):
-
         vector<Particle> get_x_k_(){ return x_k_; }  //Notice (priority Low): not ideal, needs changing.
 
 
@@ -38,24 +36,34 @@ class phd_filter{
         // Notice: Most of those functions need to be called as a group.
         //          they should be made private and an encompassing function should be put in place. 
 
+        /**
+         * NOTICE: {priority low} functioning okay 
+         * @def: performs linear motion update.
+         */
+        void propagate_states(void);
+
+        /**
+         * NOTICE: {priority medium} Seems working... not well inspected  
+         * TODO: Change detections to be columns rather than rows.
+         *
+         * @def: performs sensor update
+         * @param detections: 2xN matrix of N detections (one per row)
+         */
+        void sensor_update(const mat& detections);
+
+
         void propose_spawned_targets(void); // Notice (priority Medium-high) Currently not implemented
         void propose_new_born_targets(void); // Notice (priority Medium-high)Currently not implemented
 
         void construct_phd_update_components(); // Notice (priority high): needs revew and revamp
-        
-        void sensor_update(mat z_); // Notice (priority high): needs review and revamp
+
         void FAILING_sensor_update_for_object_missing_detections(); // Notice (priority high): needs review and revamp
         void NormalizeWeights(); // Notice (priority high): needs review and revamp
-
         void PruningAndMerging(); // Notice (priority high): needs review and revamp
-
         vector<Particle> extract_target_states(); // Notice (priority high): needs review and revamp
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     private:
-        vector<Particle> CarBirth();
-
-
         ////////////////////////////////////////////////////////////////////////////////
         // Notice (priority medium): Those functions need massive revamp
         //              most of them can be intregrated with the functions that call 
@@ -65,27 +73,49 @@ class phd_filter{
         double SpawnWeight(vec,vec); // used in propose_spawned_targets
         tuple <PHDupdate,mat> UpdatePHDComponent(Particle); // used in construct_phd_update_components
         Particle ObjectMissedDetection(Particle);  // used in FAILING_sensor_update_for_object_missing_detections
+        vector<Particle> CarBirth(); // NOTICE: not implemented, is it needed?
         ////////////////////////////////////////////////////////////////////////////////
 
-        // Member variables
-        int J_k_, J_beta_, J_gamma_, sigma_v_;
-        double p_s_, p_d_, T_;
-        int U_, J_max_, i_;
-        mat mu_gamma_;
         
+
+
+
+
+        //////////////// Member variables //////////////////
         vector<Particle> x_k_;  // states
-        vector<PHDupdate> phd_updates_;
+        vector<PHDupdate> phd_updates_; // phd update components
 
-        mat F_{4,4};
-        mat H_{4,4};
-        vector<mat> bbox_;
+        ////// Birth params
+        mat mu_gamma_;
+        int J_gamma_;
+        const mat kP_gamma = diagmat(vec{100,100,25,25});
 
+        ////// Spawn params
+        int J_beta_;
+        const mat kP_beta = diagmat(vec{50,50,10,10});
+        const mat kweight_beta_P = diagmat(vec{100,100,400,400});
+
+        ////// Motion update:
+        double p_s_; // probability that a target still exists at time k given that its previous state.
+                     // notice: currently state and time independent.
+        mat F_{4,4, arma::fill::zeros}; // Linearize motion model
+        mat Q_{4,4, arma::fill::zeros}; // Motion noise covariance.
+            
+
+        ////// Sensor update  (and those related to it)
+        double p_d_; // def: probability of detection given a state x at time k.
+                     // notice: currently state and time independent.
+        mat H_{4,4, arma::fill::zeros};  // TODO: definition
+                                         // used in constructing PHD update components
+        mat R_{2, 2, arma::fill::zeros}; // TODO: definition
+                                         // Used in constructing PHD update components
+        
+        
+        /////// unsorted
+        int J_k_,sigma_v_;
+        double T_;
+        int U_, J_max_, i_;
         // Constant variables
-        mat kInit_covP={{100,0,0,0},{0,100,0,0},{0,0,10,0},{0,0,0,10}};
-        mat kP_gamma=diagmat(vec{100,100,25,25});
-        mat kP_beta=diagmat(vec{50,50,10,10});
-        mat kweight_beta_P=diagmat(vec{100,100,400,400});
-        mat Q=join_cols(join_rows(1.25*eye<mat>(2,2), 2.5*eye<mat>(2,2)),join_rows(1.25*eye<mat>(2,2), 5*eye<mat>(2,2)));
-        mat R=100*eye<mat>(2,2);
-
+        const mat kInit_covP={{100,0,0,0},{0,100,0,0},{0,0,10,0},{0,0,0,10}};
+        
 };

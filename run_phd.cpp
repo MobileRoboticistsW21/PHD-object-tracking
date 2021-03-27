@@ -12,6 +12,7 @@ int main()
     std::cout << "Starting a simple PHD filter simulation..." << std::endl;
     phd_filter filter("simulation"); // Notice (priority medium): Should not be passed that argument, pass parameters instead
 
+    // int t_steps_ = 3;
     int t_steps_ = 100;
     for (int t = 1; t < t_steps_; t++)
     {
@@ -21,6 +22,7 @@ int main()
         /////////////////////////
 
         // Filter potion
+        filter.propose_new_born_targets();
         filter.propose_spawned_targets();
 
         filter.propagate_states();
@@ -34,7 +36,6 @@ int main()
         filter.PruningAndMerging();
 
         vector<Particle> extracted_targets = filter.extract_target_states();
-
         plt::clf();
         plot_particles(extracted_targets);
         plot_detections(detections);

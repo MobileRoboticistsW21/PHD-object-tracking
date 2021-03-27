@@ -29,11 +29,20 @@ phd_filter::phd_filter(string type)
         x_k_.push_back(p);
         p.state = {-250, -250, 0, 0};
         x_k_.push_back(p);
-        F_ = join_cols(join_rows(eye<mat>(2, 2), eye<mat>(2, 2)),
-                       join_rows(zeros<mat>(2, 2), eye<mat>(2, 2)));
+
         
-        H_ = join_rows(eye<mat>(2, 2), zeros<mat>(2, 2));
     }
+    F_ = join_cols(
+        join_rows(eye<mat>(2, 2), eye<mat>(2, 2)),
+        join_rows(zeros<mat>(2, 2), eye<mat>(2, 2)));
+
+    H_ = join_rows(eye<mat>(2, 2), zeros<mat>(2, 2));
+
+    Q_ = join_cols(
+            join_rows(1.25 * eye<mat>(2,2), 2.5 * eye<mat>(2,2)),
+            join_rows(1.25 * eye<mat>(2,2), 5.0 * eye<mat>(2,2)));
+
+    R_ = 100 * eye<mat>(2,2); 
 }
 
 
@@ -42,13 +51,12 @@ phd_filter::phd_filter(string type)
 
 void phd_filter::propagate_states(void)
 {
-    
     for (auto& x : x_k_)
     {
         Particle pred;
-        pred.weight = p_s_*x.weight;
-        pred.state = F_*x.state;
-        pred.P = Q+F_*x.P*F_.t();
+        pred.weight = p_s_ * x.weight;
+        pred.state = F_ * x.state;
+        pred.P = Q_ + (F_ * x.P * F_.t());
 
         x = pred;
     }
@@ -77,11 +85,11 @@ vector<Particle> phd_filter::extract_target_states(){
 tuple <PHDupdate,mat> phd_filter::UpdatePHDComponent(Particle tracked_target){
     PHDupdate tracked_update;
     tracked_update.eta=H_*tracked_target.state;
-    tracked_update.S=R+H_*tracked_target.P*H_.t();
+    tracked_update.S=R_+H_*tracked_target.P*H_.t();
     tracked_update.K = tracked_target.P * H_.t() * tracked_update.S.i();
     mat I=eye<mat>(size(tracked_target.P));
     mat tracked_P = (I - tracked_update.K * H_) * tracked_target.P * (I - tracked_update.K *H_).t()
-    + tracked_update.K * R * tracked_update.K.t();
+                    + tracked_update.K * R_ * tracked_update.K.t();
     auto t=make_tuple(tracked_update,tracked_P);
     return t;
 }
@@ -113,7 +121,6 @@ Particle phd_filter::ObjectMissedDetection(Particle missed_target){
     return undetected_object;  
 }
 
-// TODO: .... just change this
 void phd_filter::FAILING_sensor_update_for_object_missing_detections()
 {
     // // Missed Detections
@@ -133,7 +140,7 @@ void phd_filter::FAILING_sensor_update_for_object_missing_detections()
 
 
 
-void phd_filter::sensor_update(mat detections) 
+void phd_filter::sensor_update(const mat& detections) 
 {
 
     vector<Particle> x_new;
@@ -146,7 +153,7 @@ void phd_filter::sensor_update(mat detections)
             PHDupdate detected_update = phd_updates_[x_idx];
             
             Particle detected_target;
-            double c=as_scalar(mean(normpdf(z, detected_update.eta, diagvec(detected_update.S))));
+            double c = as_scalar(mean(normpdf(z, detected_update.eta, diagvec(detected_update.S))));
             detected_target.weight=p_d_*target.weight*as_scalar(mean(normpdf(z,detected_update.eta,diagvec(detected_update.S))));
             detected_target.state=target.state+detected_update.K*(z-detected_update.eta);
             detected_target.P=target.P;
