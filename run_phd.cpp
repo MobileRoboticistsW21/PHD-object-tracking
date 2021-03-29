@@ -19,30 +19,33 @@ int main()
         // Simulation portion ////
         auto detections = PositionSensor(t);
         auto g_ = GroundTruth(t);  //// NOTICE: not used. 
-        /////////////////////////
 
-        // Filter potion
-        filter.propose_new_born_targets();
-        filter.propose_spawned_targets();
+        // Filter potion //
+
+        // filter.propose_new_born_targets();
+        // filter.propose_spawned_targets();
 
         filter.propagate_states();
 
         filter.construct_phd_update_components();
-        filter.FAILING_sensor_update_for_object_missing_detections();
+        // filter.FAILING_sensor_update_for_object_missing_detections();
 
         filter.sensor_update(detections);
+        filter.NormalizeWeights(); //TODO: move normalization into functions that update particles.
 
-        filter.NormalizeWeights();
         filter.PruningAndMerging();
+        filter.NormalizeWeights();  // TODO: Check if this is required. Likely is. 
 
-        vector<Particle> extracted_targets = filter.extract_target_states();
+        vector<Particle> particles = filter.extract_target_states();
+        // vector<Particle> particles = filter.get_x_k_();
         plt::clf();
-        plot_particles(extracted_targets);
+        plot_particles(particles);
         plot_detections(detections);
         plt::pause(0.0001);
-
     }
 
     std::cout << "Simulation done!" << std::endl;
+    string s; std::cin >> s;  // Temporary, just to pause at last view
+
     return 0;
 }

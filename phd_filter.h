@@ -9,13 +9,15 @@
 using namespace std;
 using namespace arma;
 
-struct Particle{
+struct Particle
+{
    vec state{4};  // 4x1 vector [x, y, Vx, Vy]
    mat P{4,4}; // 4x4 covariance
    double weight; // particle weight
 };
 
-struct PHDupdate{
+struct PHDupdate
+{
     vec eta{4};
     mat S{2,2};
     mat K{4,4};
@@ -51,16 +53,20 @@ class phd_filter{
          */
         void sensor_update(const mat& detections);
 
+        void NormalizeWeights(); // Notice (priority high): needs review and revamp
+        void PruningAndMerging(); // Notice (priority high): needs review and revamp
+
+        vector<Particle> extract_target_states(); // Notice (priority high): needs review and revamp
+
 
         void propose_spawned_targets(void); // Notice (priority Medium-high) Currently not implemented
+        
         void propose_new_born_targets(void); // Notice (priority Medium-high)Currently not implemented
 
         void construct_phd_update_components(); // Notice (priority high): needs revew and revamp
 
         void FAILING_sensor_update_for_object_missing_detections(); // Notice (priority high): needs review and revamp
-        void NormalizeWeights(); // Notice (priority high): needs review and revamp
-        void PruningAndMerging(); // Notice (priority high): needs review and revamp
-        vector<Particle> extract_target_states(); // Notice (priority high): needs review and revamp
+        
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     private:
@@ -111,10 +117,17 @@ class phd_filter{
                                          // Used in constructing PHD update components
         
         
+        ////// Pruning & Merging
+        double T_;  // Weight threshold. Particles with lower weights are pruned
+        int J_max_; // Max particles: If there are more than that many particles, discard ones with lower weight
+        
+        int U_; // Merge distance threshold: Particles that are closer than this distance are merged.
+        
+
         /////// unsorted
-        int J_k_,sigma_v_;
-        double T_;
-        int U_, J_max_, i_;
+        int J_k_;
+        int sigma_v_;
+        int i_;
         // Constant variables
         const mat kInit_covP={{100,0,0,0},{0,100,0,0},{0,0,10,0},{0,0,0,10}};
         

@@ -17,7 +17,7 @@ phd_filter::phd_filter(string type)
         p_s_ = 0.99;
         p_d_ = 0.98;
         T_ = 0.00001;
-        U_ = 4;
+        U_ = 10; // 4;
         J_max_ = 100;
         i_ = 0;
         mu_gamma_ = join_rows(vec{250, 250, 0, 0}, vec{-250, -250, 0, 0});
@@ -42,7 +42,8 @@ phd_filter::phd_filter(string type)
             join_rows(1.25 * eye<mat>(2,2), 2.5 * eye<mat>(2,2)),
             join_rows(1.25 * eye<mat>(2,2), 5.0 * eye<mat>(2,2)));
 
-    R_ = 100 * eye<mat>(2,2); 
+    // R_ = 100 * eye<mat>(2,2); 
+    R_ = 8 * eye<mat>(2,2); 
 }
 
 
@@ -62,7 +63,6 @@ void phd_filter::propagate_states(void)
     }
 }
 
-// TODO: Should this function return a state instead of a particle.
 vector<Particle> phd_filter::extract_target_states(){
     vector<Particle> extracted_state;
     for(const auto& x : x_k_)
@@ -175,16 +175,14 @@ void phd_filter::sensor_update(const mat& detections)
 
 Particle phd_filter::SpawnMotionModel(Particle parent){
     Particle spawn_target;
-    spawn_target.state=mvnrnd(vec{0,0,0,0},diagmat(vec{50,50,10,10}))
-                        + parent.state;
-    spawn_target.P= kP_beta + parent.P;
-    spawn_target.weight=0;
+    spawn_target.state = mvnrnd(vec{0,0,0,0},diagmat(vec{50,50,10,10})) + parent.state;
+    spawn_target.P = kP_beta + parent.P;
+    spawn_target.weight = 0;
     return spawn_target;
 }
 double phd_filter::SpawnWeight(vec spawn,vec parent){
-    double spawn_weight = norm(0.05*normpdf(spawn,parent,
-    diagvec(kweight_beta_P))+0.1*normpdf(spawn,parent,
-    diagvec(kweight_beta_P)));
+    auto n = normpdf(spawn, parent, diagvec(kweight_beta_P));
+    double spawn_weight = norm(0.05*n + 0.1*n);
     return spawn_weight;
 }
 /** UPDATE
@@ -199,9 +197,8 @@ void phd_filter::propose_spawned_targets(void)
         for(auto it4:x_k_)
         {
             i_++;
-            pred_target=SpawnMotionModel(it4);
-            pred_target.weight=SpawnWeight(pred_target.state,
-            it4.state)*it4.weight;
+            pred_target = SpawnMotionModel(it4);
+            pred_target.weight = SpawnWeight(pred_target.state, it4.state)*it4.weight;
             x_pred_.push_back(pred_target);
         }
     }
@@ -215,9 +212,12 @@ void phd_filter::propose_spawned_targets(void)
 
 
 double phd_filter::BirthWeight(vec current_state){
-    double birth_weight=norm(0.1*normpdf(current_state,mu_gamma_.col(0),
-    diagvec(kP_gamma))+0.1*normpdf(current_state,mu_gamma_.col(1),
-    diagvec(kP_gamma)));
+    double birth_weight = 
+        norm(
+            0.1 * normpdf(current_state, mu_gamma_.col(0), diagvec(kP_gamma)) 
+            + 
+            0.1 * normpdf(current_state, mu_gamma_.col(1), diagvec(kP_gamma))
+        );
     return birth_weight;
 }
 /** UPDATE
@@ -242,3 +242,19 @@ void phd_filter::propose_new_born_targets(void)
     }
     */
 }
+
+
+
+
+void phd_filter::NormalizeWeights(){
+    double tot = 0.0;
+    for(const auto& x : x_k_)
+    {
+        tot += x.weight;
+    }
+    for (auto& x : x_k_)
+    {
+        x.weight /= tot;
+    }
+}
+
