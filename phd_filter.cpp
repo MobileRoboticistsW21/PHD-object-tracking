@@ -203,6 +203,20 @@ void phd_filter::propose_spawned_targets(void)
         }
     }
     */
+    for(int it2 = 0; it2 < J_beta_; it2++)        // for each spawning Gaussian
+    {
+        for(auto it3:x_k_)                        // for each current target
+        {
+            i_++;
+            pred_target = SpawnMotionModel(it3);
+            pred_target.weight = SpawnWeight(pred_target.state, it3.state) * it3.weight;
+            x_pred_.push_back(pred_target);
+        }
+    }
+
+    // need to add current targets to x_pred_? after checking survival 
+    
+    
 }
 
 
@@ -241,6 +255,20 @@ void phd_filter::propose_new_born_targets(void)
         }
     }
     */
+    i_ = -1;       // reset i_ to -1 every iteration, because i_++ is the first thing in the loop
+    // i_ should be the same as x_pred_.size(), so we can remove i_
+    x_pred_.clear();
+    Particle pred_target;
+
+    for (int it1 = 0; it1 < J_gamma_; it1 ++) {
+        i_ = i_ + 1;
+        pred_target.weight = BirthWeight(mu_gamma_.col(it1)); // not sure about weight
+        pred_target.state = mu_gamma_.col(it1);
+        pred_target.P = kP_gamma;
+        x_pred_.push_back(pred_target);      // need to declare x_pred_ somewhere 
+    }
+    
+    
 }
 
 
