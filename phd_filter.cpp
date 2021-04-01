@@ -17,7 +17,7 @@ phd_filter::phd_filter(string type)
         p_s_ = 0.99;
         p_d_ = 0.98;
         T_ = 0.00001;
-        U_ = 10; // 4;
+        U_ = 4;
         J_max_ = 100;
         i_ = 0;
         mu_gamma_ = join_rows(vec{250, 250, 0, 0}, vec{-250, -250, 0, 0});
@@ -29,8 +29,6 @@ phd_filter::phd_filter(string type)
         x_k_.push_back(p);
         p.state = {-250, -250, 0, 0};
         x_k_.push_back(p);
-
-        
     }
     F_ = join_cols(
         join_rows(eye<mat>(2, 2), eye<mat>(2, 2)),
@@ -80,95 +78,66 @@ vector<Particle> phd_filter::extract_target_states(){
 
 
 
+vector<Particle> phd_filter::propose_particles_with_missing_detections()
+{
+    vector<Particle> x_miss = x_k_;
+    for (auto& x : x_miss)
+    {
+        x.weight *= (1 - p_d_);
+    }
+    return x_miss;
+}
 
-
-tuple <PHDupdate,mat> phd_filter::UpdatePHDComponent(Particle tracked_target){
-    PHDupdate tracked_update;
-    tracked_update.eta=H_*tracked_target.state;
-    tracked_update.S=R_+H_*tracked_target.P*H_.t();
-    tracked_update.K = tracked_target.P * H_.t() * tracked_update.S.i();
-    mat I=eye<mat>(size(tracked_target.P));
-    mat tracked_P = (I - tracked_update.K * H_) * tracked_target.P * (I - tracked_update.K *H_).t()
-                    + tracked_update.K * R_ * tracked_update.K.t();
-    auto t=make_tuple(tracked_update,tracked_P);
-    return t;
+PHDupdate phd_filter::UpdatePHDComponent(const Particle& p)
+{
+    PHDupdate u;
+    u.eta= H_* p.state;
+    u.S= R_ + H_*p.P*H_.t();
+    u.K = p.P*H_.t()*u.S.i();
+    mat I = eye<mat>(size(p.P));
+    mat d = (I - u.K * H_);
+    u.P = d*p.P*d.t() + u.K*R_*u.K.t();
+    return u;
 }
 
 void phd_filter::construct_phd_update_components()
 {
     phd_updates_.clear();
-    for (auto& x : x_k_)
+    for (const auto& x : x_k_)
     {
-        tuple<PHDupdate, mat> target_update;
-        target_update = UpdatePHDComponent(x);
-        phd_updates_.push_back(get<0>(target_update));
-        x.P = get<1>(target_update);
+        phd_updates_.push_back(UpdatePHDComponent(x));
     }
 }
 
-
-
-
-
-
-
-
-Particle phd_filter::ObjectMissedDetection(Particle missed_target){
-    Particle undetected_object;
-    undetected_object.weight=(1-p_d_)*missed_target.weight;
-    undetected_object.state=missed_target.state;
-    undetected_object.P=missed_target.P;
-    return undetected_object;  
-}
-
-void phd_filter::FAILING_sensor_update_for_object_missing_detections()
-{
-    // // Missed Detections
-    // x_k_.clear();
-    // for (auto it7 : x_pred_)
-    // {
-    //     // TODO: make sure this is correct! where are we checking that the object is not detected?!
-    //     x_k_.push_back(ObjectMissedDetection(it7));
-    // }
-    // x_k_.clear();
-}
-
-
-
-
- 
-
-
-
 void phd_filter::sensor_update(const mat& detections) 
 {
-
     vector<Particle> x_new;
+    
+    construct_phd_update_components();
+    
+    // x_new = propose_particles_with_missing_detections();
+    
     for (int z_idx = 0; z_idx < detections.n_rows; z_idx++)
     {
         vec z = arma::vectorise(detections.row(z_idx));
         for (int x_idx = 0; x_idx < x_k_.size(); x_idx++)
         {
-            Particle target = x_k_[x_idx];
-            PHDupdate detected_update = phd_updates_[x_idx];
+            Particle& target = x_k_[x_idx];
+            PHDupdate& p_update = phd_updates_[x_idx];
             
+            auto distribution = normpdf(z, p_update.eta, diagvec(p_update.S));
+            double distribution_mean = as_scalar(mean(distribution));
+
             Particle detected_target;
-            double c = as_scalar(mean(normpdf(z, detected_update.eta, diagvec(detected_update.S))));
-            detected_target.weight=p_d_*target.weight*as_scalar(mean(normpdf(z,detected_update.eta,diagvec(detected_update.S))));
-            detected_target.state=target.state+detected_update.K*(z-detected_update.eta);
-            detected_target.P=target.P;
+            detected_target.weight = p_d_ * target.weight * distribution_mean;
+            detected_target.state= target.state + p_update.K * (z - p_update.eta);
+            detected_target.P = p_update.P;
 
             x_new.push_back(detected_target);
         }
     }
     x_k_ = x_new;
 }
-
-
-
-
-
-
 
 
 
@@ -256,5 +225,93 @@ void phd_filter::NormalizeWeights(){
     {
         x.weight /= tot;
     }
+}
+
+Particle& phd_filter::get_max_weight_particle(vector<Particle>& particles)
+{
+    Particle& heaviest = particles[0];
+    for (Particle& particle : particles)
+    {
+        if(particle.weight > heaviest.weight)
+        {
+            heaviest = particle;
+        }
+    }
+    return heaviest;
+}
+
+double phd_filter::mahalanobis_distance(const Particle& a, const Particle& b)
+{
+    arma::vec state_diff = a.state - b.state; 
+    return sqrt(as_scalar(state_diff.t() * a.P.i() * state_diff));
+}
+
+Particle phd_filter::merge_particles(const vector<Particle> particles)
+{
+    Particle merged_p;
+    for (const auto& elem : particles) 
+    { 
+        merged_p.weight += elem.weight; 
+    }
+    
+    for (const auto& elem: particles) 
+    { 
+        merged_p.state += elem.weight * elem.state; 
+    }
+    merged_p.state /= merged_p.weight;
+    
+    for(const auto& elem : particles)
+    {
+        arma::vec delta_state = merged_p.state - elem.state; 
+        arma::mat inovation_covariance = delta_state * delta_state.t();
+        merged_p.P += elem.weight * (elem.P + inovation_covariance);
+    }
+    merged_p.P /= merged_p.weight;
+    return merged_p;
+}
+
+void phd_filter::PruningAndMerging(){
+    vector<Particle> pruned_set;
+    vector<Particle> heavy_particles;
+    for(const auto& x : x_k_)
+    {
+        if(x.weight > T_)
+        {
+            heavy_particles.push_back(x);
+        }
+    }
+
+    while(!heavy_particles.empty()){
+        Particle& heaviest_p = get_max_weight_particle(heavy_particles);
+
+        vector<Particle> unmerged_particles, merge_candidates;
+        for(const auto& p : heavy_particles){
+            if(mahalanobis_distance(p, heaviest_p) < U_)
+            {
+                merge_candidates.push_back(p);
+            }
+            else
+            {
+                unmerged_particles.push_back(p);
+            }
+        }
+
+        pruned_set.push_back(merge_particles(merge_candidates));
+
+        heavy_particles = unmerged_particles;
+    }
+    if(pruned_set.size() > J_max_)
+    {
+        auto comparator = [](const Particle &a, const Particle &b)->bool
+        {
+            return a.weight > b.weight;
+        };
+        sort(pruned_set.begin(), pruned_set.end(), comparator);
+        x_k_ = vector<Particle>(pruned_set.begin(), pruned_set.begin() + J_max_);
+    } 
+    else
+    {
+        x_k_ = pruned_set;
+    }   
 }
 

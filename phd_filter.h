@@ -11,16 +11,17 @@ using namespace arma;
 
 struct Particle
 {
-   vec state{4};  // 4x1 vector [x, y, Vx, Vy]
-   mat P{4,4}; // 4x4 covariance
-   double weight; // particle weight
+   vec state{4, arma::fill::zeros};  // 4x1 vector [x, y, Vx, Vy]
+   mat P{4,4, arma::fill::zeros}; // 4x4 covariance
+   double weight = 0; // particle weight
 };
 
 struct PHDupdate
 {
-    vec eta{4};
-    mat S{2,2};
-    mat K{4,4};
+    vec eta{4, arma::fill::zeros};  // Projected detection
+    mat S{2,2, arma::fill::zeros};  // Projected sensor covariance
+    mat K{4,4, arma::fill::zeros};  // Kalman gain
+    mat P{4,4, arma::fill::zeros};  // Updated state covariance
 };
 
 // Notice (priorty Medium): This should house the settings needed for the filter eventually. 
@@ -31,13 +32,14 @@ class phd_filter{
     public:
         phd_filter(string);  // Notice (priority low): currently this hardcodes settings, that should be changed
 
-        vector<Particle> get_x_k_(){ return x_k_; }  //Notice (priority Low): not ideal, needs changing.
-
-
-        //// MAIN FUNCTIONS ////////////////////////////////////////////////////////////////////////////////////////////
-        // Notice: Most of those functions need to be called as a group.
-        //          they should be made private and an encompassing function should be put in place. 
-
+        /**
+         * NOTICE: (priority Low): not ideal, needs changing.
+         */
+        vector<Particle> get_x_k_()
+        { 
+            return x_k_; 
+        }  
+      
         /**
          * NOTICE: {priority low} functioning okay 
          * @def: performs linear motion update.
@@ -53,20 +55,37 @@ class phd_filter{
          */
         void sensor_update(const mat& detections);
 
-        void NormalizeWeights(); // Notice (priority high): needs review and revamp
-        void PruningAndMerging(); // Notice (priority high): needs review and revamp
+        /**
+         * NOTICE: (priority low): simple and seems to be functioning fine
+         * @def Normalizes all particle weights
+         */
+        void NormalizeWeights(); 
+        
+        /**
+         * NOTICE: (priority low): simple and seems to be functioning fine
+                   BUT: the function can be sped up using a priority queue and less copying.
+         * @def Merges particles of low manhalanobis distance proximity. 
+         *      If many particles remain (configurable) the ones with lower weight are discarded. 
+         */
+        void PruningAndMerging();
 
-        vector<Particle> extract_target_states(); // Notice (priority high): needs review and revamp
+        /**
+         * NOTICE: (priority low): simple and seems to be functioning fine
+         * @def get targets from tracked particles. 
+         * @return particles with weight higher than a set threashold.
+         */
+        vector<Particle> extract_target_states();
 
+        vector<Particle> propose_particles_with_missing_detections();
+
+
+        //// MAIN FUNCTIONS ////////////////////////////////////////////////////////////////////////////////////////////
+        // Notice: Most of those functions need to be called as a group.
+        //          they should be made private and an encompassing function should be put in place. 
 
         void propose_spawned_targets(void); // Notice (priority Medium-high) Currently not implemented
         
         void propose_new_born_targets(void); // Notice (priority Medium-high)Currently not implemented
-
-        void construct_phd_update_components(); // Notice (priority high): needs revew and revamp
-
-        void FAILING_sensor_update_for_object_missing_detections(); // Notice (priority high): needs review and revamp
-        
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     private:
@@ -77,15 +96,15 @@ class phd_filter{
         double BirthWeight(vec); // used in propose_new_born_targets
         Particle SpawnMotionModel(Particle); // used in propose_spawned_targets
         double SpawnWeight(vec,vec); // used in propose_spawned_targets
-        tuple <PHDupdate,mat> UpdatePHDComponent(Particle); // used in construct_phd_update_components
-        Particle ObjectMissedDetection(Particle);  // used in FAILING_sensor_update_for_object_missing_detections
         vector<Particle> CarBirth(); // NOTICE: not implemented, is it needed?
+        // Particle ObjectMissedDetection(const Particle& p);  // TODO: might not be needed
         ////////////////////////////////////////////////////////////////////////////////
 
-        
-
-
-
+        void construct_phd_update_components();
+        PHDupdate UpdatePHDComponent(const Particle&); 
+        double mahalanobis_distance(const Particle& a, const Particle& b);
+        Particle merge_particles(const vector<Particle> particles);
+        Particle& get_max_weight_particle(vector<Particle>& particles);
 
         //////////////// Member variables //////////////////
         vector<Particle> x_k_;  // states
@@ -111,16 +130,13 @@ class phd_filter{
         ////// Sensor update  (and those related to it)
         double p_d_; // def: probability of detection given a state x at time k.
                      // notice: currently state and time independent.
-        mat H_{4,4, arma::fill::zeros};  // TODO: definition
-                                         // used in constructing PHD update components
-        mat R_{2, 2, arma::fill::zeros}; // TODO: definition
-                                         // Used in constructing PHD update components
+        mat H_{4,4, arma::fill::zeros};  // Sensor model. Currently assumed linear
+        mat R_{2, 2, arma::fill::zeros}; // Detection covariance
         
         
         ////// Pruning & Merging
         double T_;  // Weight threshold. Particles with lower weights are pruned
         int J_max_; // Max particles: If there are more than that many particles, discard ones with lower weight
-        
         int U_; // Merge distance threshold: Particles that are closer than this distance are merged.
         
 

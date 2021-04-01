@@ -1,3 +1,19 @@
+# Installing dependencies 
+
+This code is setup with a linux environment in mind. To install dependencies run:
+
+./setup.sh
+
+Afterwards, simply use CMakeLists to build the code: 
+* mkdir build
+* cd build
+* cmake ..
+* make 
+
+Currently the code will produce a phd_simulation executable. Running that will demo the code.
+
+
+# TODO LIST: 
 lots needs to be done. Here is some direction that could prove helpful!
 
 * ignore discarded_files/* and evaluate_object_3d_offline.cpp
@@ -8,7 +24,6 @@ I left some todos in the code and attempted to give them priority scores (low, m
 
 Let us chat before people take on a specific piece of the code for the sake of dividing and conquering.
 
-# TODO LIST: 
 
 ### High level concerns
 1. Investigate the disappearance of a visible track 
@@ -24,3 +39,5 @@ Let us chat before people take on a specific piece of the code for the sake of d
 
 # PHD-object-traking
 Experimentation on the use of a Probability Hypothesis Density Filter to track objects in image space.
+
+

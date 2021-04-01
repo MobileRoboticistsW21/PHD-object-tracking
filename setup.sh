@@ -18,3 +18,7 @@ cd ../ && sudo rm -rf armadillo*
 # Setup matplotlib-cpp
 pip3 install matplotlib
 wget https://raw.githubusercontent.com/lava/matplotlib-cpp/master/matplotlibcpp.h
+
+
+#pickle tools 
+wget http://www.picklingtools.com/PicklingTools170Release.tar.gz

@@ -20,27 +20,25 @@ int main()
         auto detections = PositionSensor(t);
         auto g_ = GroundTruth(t);  //// NOTICE: not used. 
 
-        // Filter potion //
-
+        /// Propose Particles
         // filter.propose_new_born_targets();
         // filter.propose_spawned_targets();
 
+        /// Propagation Step
         filter.propagate_states();
 
-        filter.construct_phd_update_components();
-        // filter.FAILING_sensor_update_for_object_missing_detections();
-
+        /// Update Step
         filter.sensor_update(detections);
-        filter.NormalizeWeights(); //TODO: move normalization into functions that update particles.
-
+        filter.NormalizeWeights(); // TODO: move normalization into functions that update particles.
         filter.PruningAndMerging();
         filter.NormalizeWeights();  // TODO: Check if this is required. Likely is. 
 
-        vector<Particle> particles = filter.extract_target_states();
-        // vector<Particle> particles = filter.get_x_k_();
+        /// Visualization
+        // vector<Particle> particles = filter.extract_target_states();
+        vector<Particle> particles = filter.get_x_k_();
         plt::clf();
-        plot_particles(particles);
         plot_detections(detections);
+        plot_particles(particles);
         plt::pause(0.0001);
     }
 

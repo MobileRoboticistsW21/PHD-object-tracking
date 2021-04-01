@@ -7,8 +7,21 @@ namespace plt = matplotlibcpp;
 
 using pair_xy_vectors_t = std::pair<std::vector<int>, std::vector<int>>;
 
+string createRGBA(int r, int g, int b)
+{   
+    std::stringstream ss;
+    ss << std::hex << ((r & 0xff) << 24) + ((g & 0xff) << 16) + ((b & 0xff) << 8);
+    string rgb_str = ss.str();
+    while (rgb_str.length() < 6)   rgb_str = "0" + rgb_str;
+    rgb_str = "#" + rgb_str;
+    return rgb_str;
+}
+
 void plot_particles(const vector<Particle>& particles)
 {
+    std::map<std::string, std::string> cfg;
+    cfg["color"] = 'b';
+    cfg["marker"] = "*";
     vector<int> xs, ys;
     static std::vector<pair_xy_vectors_t> trace;
     for (const auto& p : particles)
@@ -17,11 +30,11 @@ void plot_particles(const vector<Particle>& particles)
         ys.push_back(p.state[1]);
     }
     trace.push_back(pair_xy_vectors_t(xs, ys));
+    // plt::scatter(xs, ys, 2, cfg);
     for (const auto& t : trace)
     {
-        plt::plot(t.first, t.second, "b*");
+        plt::scatter(t.first, t.second, 2, cfg);
     }
-    // cout << particles.size() << endl;
 }
 
 void plot_detections(arma::mat detections)
