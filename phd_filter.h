@@ -78,14 +78,14 @@ class phd_filter{
 
         vector<Particle> propose_particles_with_missing_detections();
 
-
+        void propose_spawned_targets(void); // Notice (priority Medium-high) Currently not implemented
+        
+        void propose_new_born_targets(void); // Notice (priority Medium-high)Currently not implemented
+        
         //// MAIN FUNCTIONS ////////////////////////////////////////////////////////////////////////////////////////////
         // Notice: Most of those functions need to be called as a group.
         //          they should be made private and an encompassing function should be put in place. 
 
-        void propose_spawned_targets(void); // Notice (priority Medium-high) Currently not implemented
-        
-        void propose_new_born_targets(void); // Notice (priority Medium-high)Currently not implemented
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     private:
@@ -93,13 +93,13 @@ class phd_filter{
         // Notice (priority medium): Those functions need massive revamp
         //              most of them can be intregrated with the functions that call 
         ////////////////////////////////////////////////////////////////////////////////
-        double BirthWeight(vec); // used in propose_new_born_targets
-        Particle SpawnMotionModel(Particle); // used in propose_spawned_targets
-        double SpawnWeight(vec,vec); // used in propose_spawned_targets
-        vector<Particle> CarBirth(); // NOTICE: not implemented, is it needed?
+       
+        // vector<Particle> CarBirth(); // NOTICE: not implemented, is it needed?
         // Particle ObjectMissedDetection(const Particle& p);  // TODO: might not be needed
         ////////////////////////////////////////////////////////////////////////////////
-
+         double BirthWeight(vec);
+        Particle SpawnMotionModel(Particle);
+        double SpawnWeight(vec,vec);
         void construct_phd_update_components();
         PHDupdate UpdatePHDComponent(const Particle&); 
         double mahalanobis_distance(const Particle& a, const Particle& b);
@@ -108,6 +108,7 @@ class phd_filter{
 
         //////////////// Member variables //////////////////
         vector<Particle> x_k_;  // states
+        vector<Particle> x_pred_;  // states
         vector<PHDupdate> phd_updates_; // phd update components
 
         ////// Birth params

@@ -46,18 +46,78 @@ phd_filter::phd_filter(string type)
 
 
 
+Particle phd_filter::SpawnMotionModel(Particle parent){
+    Particle spawn_target;
+    spawn_target.state = mvnrnd(vec{0,0,0,0},diagmat(vec{50,50,10,10})) + parent.state;
+    spawn_target.P = kP_beta + parent.P;
+    spawn_target.weight = 0;
+    return spawn_target;
+}
+double phd_filter::SpawnWeight(vec spawn,vec parent){
+    auto n = normpdf(spawn, parent, diagvec(kweight_beta_P));
+    double spawn_weight = norm(0.05*n + 0.1*n);
+    return spawn_weight;
+}
+/** UPDATE
+ * This function should return a set of new spawned targets
+ */
+void phd_filter::propose_spawned_targets(void)
+{
+    for(int it2 = 0; it2 < J_beta_; it2++)        // for each spawning Gaussian
+    {
+        for(const auto& x : x_k_)                        // for each current target
+        {
+            i_++;
+            auto pred_target = SpawnMotionModel(x);
+            pred_target.weight = SpawnWeight(pred_target.state, x.state) * x.weight;
+            x_pred_.push_back(pred_target);
+        }
+    }
 
+    // need to add current targets to x_pred_? after checking survival 
+    
+    
+}
+
+double phd_filter::BirthWeight(vec current_state){
+    double birth_weight = 
+        norm(
+            0.1 * normpdf(current_state, mu_gamma_.col(0), diagvec(kP_gamma)) 
+            + 
+            0.1 * normpdf(current_state, mu_gamma_.col(1), diagvec(kP_gamma))
+        );
+    return birth_weight;
+}
+/** UPDATE
+ * This function should return a set of new born targets
+ */
+void phd_filter::propose_new_born_targets(void)
+{
+    i_ = -1;       // reset i_ to -1 every iteration, because i_++ is the first thing in the loop
+    // i_ should be the same as x_pred_.size(), so we can remove i_
+    x_pred_.clear();
+    Particle pred_target;
+    for (int it1 = 0; it1 < J_gamma_; it1 ++) {
+        i_ = i_ + 1;
+        pred_target.weight = BirthWeight(mu_gamma_.col(it1)); // not sure about weight
+        pred_target.state = mu_gamma_.col(it1);
+        pred_target.P = kP_gamma;
+        x_pred_.push_back(pred_target);      // need to declare x_pred_ somewhere 
+    }
+    
+    
+}
 
 void phd_filter::propagate_states(void)
 {
-    for (auto& x : x_k_)
+    for (const auto& x : x_k_)
     {
         Particle pred;
         pred.weight = p_s_ * x.weight;
         pred.state = F_ * x.state;
         pred.P = Q_ + (F_ * x.P * F_.t());
 
-        x = pred;
+        x_pred_.push_back(pred);
     }
 }
 
@@ -103,7 +163,7 @@ PHDupdate phd_filter::UpdatePHDComponent(const Particle& p)
 void phd_filter::construct_phd_update_components()
 {
     phd_updates_.clear();
-    for (const auto& x : x_k_)
+    for (const auto& x : x_pred_)
     {
         phd_updates_.push_back(UpdatePHDComponent(x));
     }
@@ -115,14 +175,14 @@ void phd_filter::sensor_update(const mat& detections)
     
     construct_phd_update_components();
     
-    // x_new = propose_particles_with_missing_detections();
+    // x_new = propose_particles_with_missing_detections();  // TODO: Confirm the use of this 
     
     for (int z_idx = 0; z_idx < detections.n_rows; z_idx++)
     {
         vec z = arma::vectorise(detections.row(z_idx));
-        for (int x_idx = 0; x_idx < x_k_.size(); x_idx++)
+        for (int x_idx = 0; x_idx < x_pred_.size(); x_idx++)
         {
-            Particle& target = x_k_[x_idx];
+            Particle& target = x_pred_[x_idx];
             PHDupdate& p_update = phd_updates_[x_idx];
             
             auto distribution = normpdf(z, p_update.eta, diagvec(p_update.S));
@@ -142,51 +202,6 @@ void phd_filter::sensor_update(const mat& detections)
 
 
 
-Particle phd_filter::SpawnMotionModel(Particle parent){
-    Particle spawn_target;
-    spawn_target.state = mvnrnd(vec{0,0,0,0},diagmat(vec{50,50,10,10})) + parent.state;
-    spawn_target.P = kP_beta + parent.P;
-    spawn_target.weight = 0;
-    return spawn_target;
-}
-double phd_filter::SpawnWeight(vec spawn,vec parent){
-    auto n = normpdf(spawn, parent, diagvec(kweight_beta_P));
-    double spawn_weight = norm(0.05*n + 0.1*n);
-    return spawn_weight;
-}
-/** UPDATE
- * This function should return a set of new spawned targets
- */
-void phd_filter::propose_spawned_targets(void)
-{
-    // Spawning
-    /*
-    for(int it3=0;it3<J_beta_;it3++)
-    {
-        for(auto it4:x_k_)
-        {
-            i_++;
-            pred_target = SpawnMotionModel(it4);
-            pred_target.weight = SpawnWeight(pred_target.state, it4.state)*it4.weight;
-            x_pred_.push_back(pred_target);
-        }
-    }
-    */
-    for(int it2 = 0; it2 < J_beta_; it2++)        // for each spawning Gaussian
-    {
-        for(auto it3:x_k_)                        // for each current target
-        {
-            i_++;
-            pred_target = SpawnMotionModel(it3);
-            pred_target.weight = SpawnWeight(pred_target.state, it3.state) * it3.weight;
-            x_pred_.push_back(pred_target);
-        }
-    }
-
-    // need to add current targets to x_pred_? after checking survival 
-    
-    
-}
 
 
 
@@ -194,51 +209,6 @@ void phd_filter::propose_spawned_targets(void)
 
 
 
-double phd_filter::BirthWeight(vec current_state){
-    double birth_weight = 
-        norm(
-            0.1 * normpdf(current_state, mu_gamma_.col(0), diagvec(kP_gamma)) 
-            + 
-            0.1 * normpdf(current_state, mu_gamma_.col(1), diagvec(kP_gamma))
-        );
-    return birth_weight;
-}
-/** UPDATE
- * This function should return a set of new born targets
- */
-void phd_filter::propose_new_born_targets(void)
-{
-    // int i_ = 0;
-    // Particle pred_target;
-
-    // Simulation
-    // Birth
-    /*
-    for(int it1=0;it1<J_gamma_;it1++){
-        for(auto it2:x_k_){
-            i_++;
-            pred_target.weight=BirthWeight(it2.state);
-            pred_target.state=mu_gamma_.col(it1); // make it constant
-            pred_target.P=kP_gamma;
-            x_pred_.push_back(pred_target);
-        }
-    }
-    */
-    i_ = -1;       // reset i_ to -1 every iteration, because i_++ is the first thing in the loop
-    // i_ should be the same as x_pred_.size(), so we can remove i_
-    x_pred_.clear();
-    Particle pred_target;
-
-    for (int it1 = 0; it1 < J_gamma_; it1 ++) {
-        i_ = i_ + 1;
-        pred_target.weight = BirthWeight(mu_gamma_.col(it1)); // not sure about weight
-        pred_target.state = mu_gamma_.col(it1);
-        pred_target.P = kP_gamma;
-        x_pred_.push_back(pred_target);      // need to declare x_pred_ somewhere 
-    }
-    
-    
-}
 
 
 

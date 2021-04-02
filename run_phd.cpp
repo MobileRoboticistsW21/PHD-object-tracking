@@ -21,8 +21,8 @@ int main()
         auto g_ = GroundTruth(t);  //// NOTICE: not used. 
 
         /// Propose Particles
-        // filter.propose_new_born_targets();
-        // filter.propose_spawned_targets();
+        filter.propose_new_born_targets();
+        filter.propose_spawned_targets();
 
         /// Propagation Step
         filter.propagate_states();
