@@ -1,11 +1,13 @@
 #include <armadillo>
 #include "phd_filter.h"
 
+#include "utils/plotting_utils.hpp"
 
 /**
  * Notice (priority medium) This needs to not hardcode values, 
  * instead setup struct to be passed that contains all necesssary parameters
  */
+ // TODO: meaningful constructor
 phd_filter::phd_filter(string type)
 {
     if (type.compare("simulation") == 0)
@@ -311,5 +313,44 @@ void phd_filter::PruningAndMerging(){
     {
         x_k_ = pruned_set;
     }   
+}
+
+
+
+
+
+
+
+
+
+// the higher level function that calls other stuff
+// TODO: need to add more inputs?
+
+// TODO: functions called in here can become private?
+
+// TODO: move plotting outside?
+void phd_filter::run_PHD_filter(const mat& detections){
+    // new birth, and spawn from existing targets
+    propose_new_born_targets();
+    propose_spawned_targets();
+
+
+    /// Propagation existing targets
+    propagate_states();
+
+    /// Update Step
+    sensor_update(detections);
+    NormalizeWeights(); // TODO: move normalization into functions that update particles.
+    PruningAndMerging();
+    NormalizeWeights();  // TODO: Check if this is required. Likely is. 
+
+    /// Visualization
+    // vector<Particle> particles = filter.extract_target_states();
+    vector<Particle> particles = get_x_k_();
+    plt::clf();
+    plot_detections(detections);
+    plot_particles(particles);
+    plt::pause(0.0001);
+
 }
 

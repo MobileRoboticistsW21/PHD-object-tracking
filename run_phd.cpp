@@ -20,6 +20,7 @@ int main()
         auto detections = PositionSensor(t);
         auto g_ = GroundTruth(t);  //// NOTICE: not used. 
 
+        /*
         /// Propose Particles
         filter.propose_new_born_targets();
         filter.propose_spawned_targets();
@@ -39,7 +40,9 @@ int main()
         plt::clf();
         plot_detections(detections);
         plot_particles(particles);
-        plt::pause(0.0001);
+        plt::pause(0.0001);*/
+
+        filter.run_PHD_filter(detections);
     }
 
     std::cout << "Simulation done!" << std::endl;

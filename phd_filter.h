@@ -81,6 +81,8 @@ class phd_filter{
         void propose_spawned_targets(void); // Notice (priority Medium-high) Currently not implemented
         
         void propose_new_born_targets(void); // Notice (priority Medium-high)Currently not implemented
+
+        void run_PHD_filter(const mat& detections);  // What's needed as input? 
         
         //// MAIN FUNCTIONS ////////////////////////////////////////////////////////////////////////////////////////////
         // Notice: Most of those functions need to be called as a group.
