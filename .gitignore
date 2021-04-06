@@ -34,8 +34,8 @@
 # Build directory
 build/*
 
-# Data directory
-data/*
+# # Data directory
+# data/*
 
 # vscode
 .vscode
