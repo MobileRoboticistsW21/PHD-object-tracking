@@ -1,37 +1,34 @@
 #include <armadillo>
 #include "phd_filter.h"
 
-#include "utils/plotting_utils.hpp"
 
 /**
  * Notice (priority medium) This needs to not hardcode values, 
  * instead setup struct to be passed that contains all necesssary parameters
  */
  // TODO: meaningful constructor
-phd_filter::phd_filter(string type)
+phd_filter::phd_filter()
 {
-    if (type.compare("simulation") == 0)
-    {
-        J_k_ = 2;
-        J_beta_ = 2;
-        J_gamma_ = 2;
-        sigma_v_ = 5;
-        p_s_ = 0.99;
-        p_d_ = 0.98;
-        T_ = 0.00001;
-        U_ = 4;
-        J_max_ = 100;
-        i_ = 0;
-        mu_gamma_ = join_rows(vec{250, 250, 0, 0}, vec{-250, -250, 0, 0});
-        // t_steps_ = 100;
-        Particle p;
-        p.state = {250, 250, 0, 0};
-        p.P = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}};
-        p.weight = 0.5;
-        x_k_.push_back(p);
-        p.state = {-250, -250, 0, 0};
-        x_k_.push_back(p);
-    }
+    
+    J_k_ = 2;
+    J_beta_ = 2;
+    J_gamma_ = 2;
+    sigma_v_ = 5;
+    p_s_ = 0.99;
+    p_d_ = 0.98;
+    T_ = 0.00001;
+    U_ = 4;
+    J_max_ = 100;
+    mu_gamma_ = join_rows(vec{250, 250, 0, 0}, vec{-250, -250, 0, 0});
+    // t_steps_ = 100;
+    Particle p;
+    p.state = {250, 250, 0, 0};
+    p.P = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}};
+    p.weight = 0.5;
+    x_k_.push_back(p);
+    p.state = {-250, -250, 0, 0};
+    x_k_.push_back(p);
+
     F_ = join_cols(
         join_rows(eye<mat>(2, 2), eye<mat>(2, 2)),
         join_rows(zeros<mat>(2, 2), eye<mat>(2, 2)));
@@ -47,6 +44,27 @@ phd_filter::phd_filter(string type)
 }
 
 
+// the higher level function that calls other stuff
+// TODO: need to add more inputs?
+// TODO: functions called in here can become private?
+// TODO: move plotting outside?
+void phd_filter::update(const mat& detections)
+{
+    x_pred_.clear();
+    
+    propose_new_born_targets();
+
+    propose_spawned_targets();
+
+    propagate_states();
+
+    sensor_update(detections);
+    NormalizeWeights(); // TODO: move normalization into functions that update particles.
+
+    PruningAndMerging();
+    NormalizeWeights();  // TODO: Check if this is required. Likely is. 
+}
+
 
 Particle phd_filter::SpawnMotionModel(Particle parent){
     Particle spawn_target;
@@ -60,6 +78,7 @@ double phd_filter::SpawnWeight(vec spawn,vec parent){
     double spawn_weight = norm(0.05*n + 0.1*n);
     return spawn_weight;
 }
+
 /** UPDATE
  * This function should return a set of new spawned targets
  */
@@ -69,7 +88,6 @@ void phd_filter::propose_spawned_targets(void)
     {
         for(const auto& x : x_k_)                        // for each current target
         {
-            i_++;
             auto pred_target = SpawnMotionModel(x);
             pred_target.weight = SpawnWeight(pred_target.state, x.state) * x.weight;
             x_pred_.push_back(pred_target);
@@ -77,7 +95,6 @@ void phd_filter::propose_spawned_targets(void)
     }
 
     // need to add current targets to x_pred_? after checking survival 
-    
     
 }
 
@@ -95,12 +112,8 @@ double phd_filter::BirthWeight(vec current_state){
  */
 void phd_filter::propose_new_born_targets(void)
 {
-    i_ = -1;       // reset i_ to -1 every iteration, because i_++ is the first thing in the loop
-    // i_ should be the same as x_pred_.size(), so we can remove i_
-    x_pred_.clear();
     Particle pred_target;
     for (int it1 = 0; it1 < J_gamma_; it1 ++) {
-        i_ = i_ + 1;
         pred_target.weight = BirthWeight(mu_gamma_.col(it1)); // not sure about weight
         pred_target.state = mu_gamma_.col(it1);
         pred_target.P = kP_gamma;
@@ -134,10 +147,6 @@ vector<Particle> phd_filter::extract_target_states(){
     }
     return extracted_state;
 }
-
-
-
-
 
 
 vector<Particle> phd_filter::propose_particles_with_missing_detections()
@@ -200,20 +209,6 @@ void phd_filter::sensor_update(const mat& detections)
     }
     x_k_ = x_new;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 void phd_filter::NormalizeWeights(){
     double tot = 0.0;
@@ -314,43 +309,3 @@ void phd_filter::PruningAndMerging(){
         x_k_ = pruned_set;
     }   
 }
-
-
-
-
-
-
-
-
-
-// the higher level function that calls other stuff
-// TODO: need to add more inputs?
-
-// TODO: functions called in here can become private?
-
-// TODO: move plotting outside?
-void phd_filter::run_PHD_filter(const mat& detections){
-    // new birth, and spawn from existing targets
-    propose_new_born_targets();
-    propose_spawned_targets();
-
-
-    /// Propagation existing targets
-    propagate_states();
-
-    /// Update Step
-    sensor_update(detections);
-    NormalizeWeights(); // TODO: move normalization into functions that update particles.
-    PruningAndMerging();
-    NormalizeWeights();  // TODO: Check if this is required. Likely is. 
-
-    /// Visualization
-    // vector<Particle> particles = filter.extract_target_states();
-    vector<Particle> particles = get_x_k_();
-    plt::clf();
-    plot_detections(detections);
-    plot_particles(particles);
-    plt::pause(0.0001);
-
-}
-
