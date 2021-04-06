@@ -20,5 +20,9 @@ pip3 install matplotlib
 wget https://raw.githubusercontent.com/lava/matplotlib-cpp/master/matplotlibcpp.h
 
 
-#pickle tools 
-wget http://www.picklingtools.com/PicklingTools170Release.tar.gz
+## Failed to get this to work
+## pickle tools 
+# wget http://www.picklingtools.com/PicklingTools170Release.tar.gz
+
+# For data loading
+sudo apt-get install libjsoncpp-dev
