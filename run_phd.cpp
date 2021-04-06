@@ -1,7 +1,7 @@
 #include <iostream>
 #include <jsoncpp/json/json.h>
 #include <fstream>
-#include "phd_filter.h"
+#include "phd_filter_2d.h" // TODO: this needs to be changed
 
 int main()
 {
@@ -17,7 +17,7 @@ int main()
     Json::Value obj;
     reader.parse(data_file, obj);
     
-    phd_filter filter;
+    PhdFilter2d filter;
 
     for(const auto& data: obj)
     {
