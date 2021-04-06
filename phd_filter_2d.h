@@ -1,31 +1,6 @@
 #include "phd_filter_base.h"
 
 
-
-/**
- * NOTICE: This is a temporary reminder of the state and measurement
- * dimensions that htis filter induces. Those will be kept abstract
- * for now in the base filter because of time constraints and 
- * need for change.
- */
-// struct Particle
-// {
-//    vec state{4, arma::fill::zeros};  // 4x1 vector [x, y, Vx, Vy]
-//    mat P{4,4, arma::fill::zeros}; // 4x4 covariance
-//    double weight = 0; // particle weight
-// };
-
-// struct PHDupdate
-// {
-//     vec eta{4, arma::fill::zeros};  // Projected detection
-//     mat S{2,2, arma::fill::zeros};  // Projected sensor covariance
-//     mat K{4,4, arma::fill::zeros};  // Kalman gain
-//     mat P{4,4, arma::fill::zeros};  // Updated state covariance
-// };
-
-
-
-
 class PhdFilter2d : public PhdFilterBase
 {
 
