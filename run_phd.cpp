@@ -1,7 +1,7 @@
 #include <iostream>
 #include <jsoncpp/json/json.h>
 #include <fstream>
-#include "phd_filter_2d.h" // TODO: this needs to be changed
+#include "phd_filter_box.h" // TODO: this needs to be changed
 
 arma::mat jason_to_arma_mat(const Json::Value& vals)
 {
@@ -16,6 +16,14 @@ arma::mat jason_to_arma_mat(const Json::Value& vals)
         }
     }
     return m;
+}
+
+arma::mat get_detection_matrix(const Json::Value& vals)
+{
+        arma::mat bb_mat = jason_to_arma_mat(vals["bb"]);
+        arma::mat flows_mat = jason_to_arma_mat(vals["flows"]);
+        arma::mat detections = std::move(arma::join_rows(bb_mat, flows_mat)); 
+        return detections;
 }
 
 int main()
@@ -33,17 +41,16 @@ int main()
     Json::Value obj;
     reader.parse(data_file, obj);
     
-    PhdFilter2d filter;
+    PhdFilterBox filter;
 
     for(const auto& data: obj)
     {
-        arma::mat bb_mat = jason_to_arma_mat(data["bb"]);
-        std::cout << bb_mat << std::endl;
         
-        arma::mat flows_mat = jason_to_arma_mat(data["flow"]);
-        std::cout << flows_mat << std::endl;
+        arma::mat detections = get_detection_matrix(data);
 
-        break;
+        filter.update(detections);
+
+        break;  // TODO: remove
     }
 
     return 0;
