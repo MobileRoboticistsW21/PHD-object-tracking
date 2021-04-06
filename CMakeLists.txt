@@ -8,6 +8,7 @@ find_package(PythonLibs 3 REQUIRED )
 find_package(LAPACK REQUIRED)
 find_package(BLAS REQUIRED)
 find_package(Armadillo REQUIRED)
+find_package(Python3 COMPONENTS NumPy REQUIRED)
 
 include_directories(${ARMADILLO_INCLUDE_DIRS})
 include_directories(${PYTHON_INCLUDE_DIRS})
@@ -22,3 +23,5 @@ target_link_libraries(phd_filter_simulation
     ${BLAS_LIBRARIES} 
     ${ARMADILLO_LIBRARIES}
 )
+
+target_link_libraries(phd_filter_simulation Python3::NumPy)
