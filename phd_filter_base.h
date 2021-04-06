@@ -98,6 +98,7 @@ class PhdFilterBase{
         double SpawnWeight(vec,vec);
         
         void propose_new_born_targets(void); // Notice (priority Medium-high)Currently not implemented
+        void update_new_born_model(const mat& detections);
         double BirthWeight(vec);
 
         void construct_phd_update_components();

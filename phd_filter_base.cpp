@@ -18,6 +18,8 @@ PhdFilterBase::PhdFilterBase()
 void PhdFilterBase::update(const mat& detections)
 {
     x_pred_.clear();
+
+    update_new_born_model(detections);  // remove if not correct
     
     propose_new_born_targets();
 
@@ -65,7 +67,6 @@ void PhdFilterBase::propose_spawned_targets(void)
         }
     }
 
-    // need to add current targets to x_pred_? after checking survival 
 }
 
 double PhdFilterBase::BirthWeight(vec current_state){
@@ -91,6 +92,16 @@ void PhdFilterBase::propose_new_born_targets(void)
         x_pred_.push_back(pred_target);      // need to declare x_pred_ somewhere 
     }
     
+}
+
+// new stuff
+void PhdFilterBase::update_new_born_model(const mat& detections){
+    J_gamma_ = detections.n_rows;
+    mu_gamma_.clear();
+
+    // TODO: add detections to mu_gamma_
+    
+
 }
 
 void PhdFilterBase::propagate_states(void)
