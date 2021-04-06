@@ -93,12 +93,13 @@ class PhdFilterBase{
 
         // spawn related methods
         void propose_spawned_targets(void); // Notice (priority Medium-high) Currently not implemented
-        Particle spawn_particle(const Particle& x);
-        Particle SpawnMotionModel(Particle);
-        double SpawnWeight(vec,vec);
+        virtual Particle spawn_particle(const Particle& x) = 0;
+        // Particle SpawnMotionModel(Particle);
+        // double SpawnWeight(vec,vec);
         
         void propose_new_born_targets(void); // Notice (priority Medium-high)Currently not implemented
-        double BirthWeight(vec);
+        virtual Particle propose_new_born_particle(int i) = 0;
+        // double BirthWeight(vec);
 
         void construct_phd_update_components();
         PHDupdate UpdatePHDComponent(const Particle&); 

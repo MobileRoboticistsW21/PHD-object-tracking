@@ -1,7 +1,8 @@
 #include <iostream>
 #include <jsoncpp/json/json.h>
 #include <fstream>
-#include "phd_filter_box.h" // TODO: this needs to be changed
+#include "phd_filter_box.h"
+#include "utils/plotting_utils.hpp"
 
 arma::mat jason_to_arma_mat(const Json::Value& vals)
 {
@@ -50,7 +51,11 @@ int main()
 
         filter.update(detections);
 
-        break;  // TODO: remove
+        auto particles = filter.extract_target_states();
+        plt::clf();
+        plot_detections(detections);
+        plot_particles(particles);
+        plt::pause(0.0001);
     }
 
     return 0;

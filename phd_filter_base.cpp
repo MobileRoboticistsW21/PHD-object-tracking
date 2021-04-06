@@ -32,26 +32,6 @@ void PhdFilterBase::update(const mat& detections)
     NormalizeWeights();  // TODO: Check if this is required. Likely is. 
 }
 
-
-Particle PhdFilterBase::SpawnMotionModel(Particle parent){
-    Particle spawn_target;
-    spawn_target.state = mvnrnd(vec{0,0,0,0},diagmat(vec{50,50,10,10})) + parent.state;
-    spawn_target.P = kP_beta + parent.P;
-    spawn_target.weight = 0;
-    return spawn_target;
-}
-double PhdFilterBase::SpawnWeight(vec spawn,vec parent){
-    auto n = normpdf(spawn, parent, diagvec(kweight_beta_P));
-    return norm(0.05*n + 0.1*n);
-}
-
-Particle PhdFilterBase::spawn_particle(const Particle& x)
-{
-    auto pred_target = SpawnMotionModel(x);
-    pred_target.weight = SpawnWeight(pred_target.state, x.state) * x.weight;
-    return pred_target;
-}
-
 /** UPDATE
  * This function should return a set of new spawned targets
  */
@@ -64,18 +44,7 @@ void PhdFilterBase::propose_spawned_targets(void)
             x_pred_.push_back(spawn_particle(x));
         }
     }
-
     // need to add current targets to x_pred_? after checking survival 
-}
-
-double PhdFilterBase::BirthWeight(vec current_state){
-    double birth_weight = 
-        norm(
-            0.1 * normpdf(current_state, mu_gamma_.col(0), diagvec(kP_gamma)) 
-            + 
-            0.1 * normpdf(current_state, mu_gamma_.col(1), diagvec(kP_gamma))
-        );
-    return birth_weight;
 }
 
 /** UPDATE
@@ -84,11 +53,9 @@ double PhdFilterBase::BirthWeight(vec current_state){
 void PhdFilterBase::propose_new_born_targets(void)
 {
     Particle pred_target;
-    for (int it1 = 0; it1 < J_gamma_; it1 ++) {
-        pred_target.weight = BirthWeight(mu_gamma_.col(it1)); // not sure about weight
-        pred_target.state = mu_gamma_.col(it1);
-        pred_target.P = kP_gamma;
-        x_pred_.push_back(pred_target);      // need to declare x_pred_ somewhere 
+    for (int i = 0; i < J_gamma_; i++) 
+    {
+        x_pred_.push_back(propose_new_born_particle(i));      // need to declare x_pred_ somewhere 
     }
     
 }

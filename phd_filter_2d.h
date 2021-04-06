@@ -1,3 +1,5 @@
+#pragma once
+
 #include "phd_filter_base.h"
 
 
@@ -72,5 +74,46 @@ private:
     //     u.P = mat{4,4, arma::fill::zeros};  // Updated state covariance
     //     return u;
     // }
+
+
+    Particle SpawnMotionModel(Particle parent){
+        Particle spawn_target;
+        spawn_target.state = mvnrnd(vec{0,0,0,0},diagmat(vec{50,50,10,10})) + parent.state;
+        spawn_target.P = kP_beta + parent.P;
+        spawn_target.weight = 0;
+        return spawn_target;
+    }
+    double SpawnWeight(vec spawn,vec parent){
+        auto n = normpdf(spawn, parent, diagvec(kweight_beta_P));
+        return norm(0.05*n + 0.1*n);
+    }
+
+    Particle spawn_particle(const Particle& x) override
+    {
+        auto pred_target = SpawnMotionModel(x);
+        pred_target.weight = SpawnWeight(pred_target.state, x.state) * x.weight;
+        return pred_target;
+    }
+
+
+    double BirthWeight(vec current_state){
+        double birth_weight = 
+            norm(
+                0.1 * normpdf(current_state, mu_gamma_.col(0), diagvec(kP_gamma)) 
+                + 
+                0.1 * normpdf(current_state, mu_gamma_.col(1), diagvec(kP_gamma))
+            );
+        return birth_weight;
+    }
+
+    Particle propose_new_born_particle(int i) override
+    {
+        Particle p;
+        p.weight = BirthWeight(mu_gamma_.col(i)); // not sure about weight
+        p.state = mu_gamma_.col(i);
+        p.P = kP_gamma;
+        return p;
+    }
+
 
 };
