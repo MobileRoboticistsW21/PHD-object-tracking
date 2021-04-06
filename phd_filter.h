@@ -30,7 +30,7 @@ struct PHD_filter_parameters
 
 class phd_filter{
     public:
-        phd_filter(string);  // Notice (priority low): currently this hardcodes settings, that should be changed
+        phd_filter();  // Notice (priority low): currently this hardcodes settings, that should be changed
 
         /**
          * NOTICE: (priority Low): not ideal, needs changing.
@@ -81,6 +81,8 @@ class phd_filter{
         void propose_spawned_targets(void); // Notice (priority Medium-high) Currently not implemented
         
         void propose_new_born_targets(void); // Notice (priority Medium-high)Currently not implemented
+
+        void update(const mat& detections);  // What's needed as input? 
         
         //// MAIN FUNCTIONS ////////////////////////////////////////////////////////////////////////////////////////////
         // Notice: Most of those functions need to be called as a group.
@@ -144,7 +146,6 @@ class phd_filter{
         /////// unsorted
         int J_k_;
         int sigma_v_;
-        int i_;
         // Constant variables
         const mat kInit_covP={{100,0,0,0},{0,100,0,0},{0,0,10,0},{0,0,0,10}};
         
