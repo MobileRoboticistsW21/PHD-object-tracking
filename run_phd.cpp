@@ -44,7 +44,7 @@ int main()
     
     PhdFilterBox filter;
 
-
+ 
     for(const auto& data: obj)
     {
         
@@ -52,11 +52,17 @@ int main()
 
         filter.update(detections);
 
+
+
+
+
         auto particles = filter.extract_target_states();
         // auto particles = filter.get_x_k_();
         plt::clf();
+        plt::xlim(0, 540);
+        plt::ylim(0, 960);
         plot_detections(detections);
-        plot_particles(particles, 5);
+        plot_particles(particles, 10);
         plt::pause(0.000001);
 
 
