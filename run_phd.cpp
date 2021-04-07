@@ -1,5 +1,6 @@
 #include <iostream>
 #include <jsoncpp/json/json.h>
+#include <jsoncpp/json/writer.h>  // could be wrong 
 #include <fstream>
 #include "phd_filter_box.h"
 #include "utils/plotting_utils.hpp"
@@ -27,6 +28,31 @@ arma::mat get_detection_matrix(const Json::Value& vals)
         return detections;
 }
 
+Json::Value particles_to_json(const vector<Particle>& particles){
+    Json::Value data;
+    Json::Value bbs(Json::arrayValue);
+    Json::Value flows(Json::arrayValue);
+    for (const auto& p : particles){
+        Json::Value bb(Json::arrayValue);
+        bb.append(Json::Value(p.state[0]));
+        bb.append(Json::Value(p.state[1]));
+        bb.append(Json::Value(p.state[2]));
+        bb.append(Json::Value(p.state[3]));
+        bbs.append(bb);
+
+
+        Json::Value flow(Json::arrayValue);
+        flow.append(Json::Value(p.state[4]));
+        flow.append(Json::Value(p.state[5]));
+        flows.append(flow);
+    }
+    data["bb"] = bbs;
+    data["flows"] = flows;
+
+    return data;
+
+}
+
 int main()
 {
     std::string file_dir;
@@ -44,6 +70,11 @@ int main()
     
     PhdFilterBox filter;
 
+    // Json writer
+    Json::Value bbs_and_flows(Json::arrayValue);
+
+
+
  
     for(const auto& data: obj)
     {
@@ -51,9 +82,6 @@ int main()
         arma::mat detections = get_detection_matrix(data);
 
         filter.update(detections);
-
-
-
 
 
         auto particles = filter.extract_target_states();
@@ -66,6 +94,8 @@ int main()
         plt::pause(0.000001);
 
 
+        auto particles_xk = filter.get_x_k_();
+        bbs_and_flows.append(particles_to_json(particles_xk));
 
         //// temp sats for testing.
         // double wmin = 1000000000;
@@ -80,6 +110,11 @@ int main()
         // std::cout << "weights: " << wmin << ", " << wmax << "  tot: " << wsum << std::endl;
 
     }
+
+    std::ofstream out_file("run_phd_output.json");
+    out_file << bbs_and_flows;
+    outfile.close();
+
 
     std::string stemp;
     std::cin >> stemp;
