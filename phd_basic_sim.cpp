@@ -1,11 +1,7 @@
-#include "phd_filter_2d.h"
-
+#include "filter/phd_filter_2d.h"
 #include "simulator/Ground_Truth.hpp"
 #include "simulator/PositionSensor.hpp"
-
 #include "utils/plotting_utils.hpp"
-
-
 
 int main()
 {

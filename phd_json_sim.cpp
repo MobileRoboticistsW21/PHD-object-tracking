@@ -1,7 +1,7 @@
 #include <iostream>
 #include <jsoncpp/json/json.h>
 #include <fstream>
-#include "phd_filter_box.h"
+#include "filter/phd_filter_box.h"
 #include "utils/plotting_utils.hpp"
 
 arma::mat jason_to_arma_mat(const Json::Value& vals)
