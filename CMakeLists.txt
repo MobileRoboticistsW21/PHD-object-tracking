@@ -43,7 +43,7 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(JSONCPP jsoncpp)
 
 
-SET(PHD_FILTER_SRC phd_filter.cpp )
+SET(PHD_FILTER_SRC phd_filter_base.cpp )
 
 
 # Simulator executable.
