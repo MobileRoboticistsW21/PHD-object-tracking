@@ -44,6 +44,7 @@ int main()
     
     PhdFilterBox filter;
 
+
     for(const auto& data: obj)
     {
         
@@ -52,11 +53,30 @@ int main()
         filter.update(detections);
 
         auto particles = filter.extract_target_states();
+        // auto particles = filter.get_x_k_();
         plt::clf();
         plot_detections(detections);
-        plot_particles(particles);
-        plt::pause(0.0001);
+        plot_particles(particles, 5);
+        plt::pause(0.000001);
+
+
+
+        //// temp sats for testing.
+        // double wmin = 1000000000;
+        // double wsum = 0;
+        // double wmax = 0;
+        // for(const auto& x:filter.get_x_k_())
+        // {
+        //     wmin = std::min({wmin, x.weight});
+        //     wmax = std::max({wmax, x.weight});
+        //     wsum += x.weight;
+        // }
+        // std::cout << "weights: " << wmin << ", " << wmax << "  tot: " << wsum << std::endl;
+
     }
 
+    std::string stemp;
+    std::cin >> stemp;
+    
     return 0;
 }

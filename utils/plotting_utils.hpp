@@ -17,10 +17,10 @@ string createRGBA(int r, int g, int b)
     return rgb_str;
 }
 
-void plot_particles(const vector<Particle>& particles)
+void plot_particles(const vector<Particle>& particles, int history_depth = 5, std::string color="b")
 {
     std::map<std::string, std::string> cfg;
-    cfg["color"] = 'b';
+    cfg["color"] = color;
     cfg["marker"] = "*";
     vector<int> xs, ys;
     static std::vector<pair_xy_vectors_t> trace;
@@ -31,9 +31,12 @@ void plot_particles(const vector<Particle>& particles)
     }
     trace.push_back(pair_xy_vectors_t(xs, ys));
     // plt::scatter(xs, ys, 2, cfg);
-    for (const auto& t : trace)
+
+    int count = 0;
+    for (auto t = trace.end()-1; t > trace.begin(); t--)
     {
-        plt::scatter(t.first, t.second, 2, cfg);
+        plt::scatter(t->first, t->second, 2, cfg);
+        if (++count >= history_depth) break;
     }
 }
 

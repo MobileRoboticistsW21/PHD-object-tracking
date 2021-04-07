@@ -51,11 +51,11 @@ class PhdFilterBase{
          * @return particles with weight higher than a set threashold.
          */
         vector<Particle> extract_target_states();
-        
-        // TODO: make this local and have it derive a default from x_k_ 
-        virtual Particle get_default_particle() = 0;
 
     protected:
+
+        // TODO: make this local and have it derive a default from x_k_ 
+        virtual Particle get_default_particle() = 0;
 
         /**
          * NOTICE: {priority low} functioning okay 

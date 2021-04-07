@@ -13,35 +13,39 @@ public:
         // sigma_v_ = 5;
         
         J_beta_ = 2;
-        J_gamma_ = 2;
         p_s_ = 0.99;
         p_d_ = 0.98;
         T_ = 0.00001;
         U_ = 4;
         J_max_ = 100;
-        mu_gamma_ = join_rows(vec{250, 250, 50, 50, 0, 0}, vec{-250, -250, 50, 50, 0, 0});
+        
+        
+        J_gamma_ = 0;  // J_gamma_ = 2;
+        // mu_gamma_ = join_rows(vec{250, 250, 50, 50, 0, 0}, vec{-250, -250, 50, 50, 0, 0}).t();
         kP_gamma = diagmat(vec{100,100,100,100,25,25});
+        
         kP_beta = diagmat(vec{50,50,50,50,10,10});
-        kweight_beta_P = diagmat(vec{100,100,100,100,400,400});
-        // F_ = join_cols(
-        //     join_rows(eye<mat>(2, 2), eye<mat>(2, 2)),
-        //     join_rows(zeros<mat>(2, 2), eye<mat>(2, 2)));
+        kweight_beta_P = diagmat(vec{75,75,25,25,100,100});
 
-        // H_ = join_rows(eye<mat>(2, 2), zeros<mat>(2, 2));
-
-        // Q_ = join_cols(
-        //         join_rows(1.25 * eye<mat>(2,2), 2.5 * eye<mat>(2,2)),
-        //         join_rows(1.25 * eye<mat>(2,2), 5.0 * eye<mat>(2,2)));
         F_ = eye<mat>(6,6);
+        Q_ = 4 * eye<mat>(6,6);
+        
         H_ = eye<mat>(6,6);
-        Q_ = eye<mat>(6,6);
-
         R_ = 8 * eye<mat>(6,6); 
-
-        initialize_particles();
-        extraction_weight_threshold_ = 0.3;
-
+        
+        extraction_weight_threshold_ = 0.02;
+        
+        // initialize_particles();
     }
+
+
+    virtual void update(const mat& detections)
+    {
+        J_gamma_ = detections.n_rows;
+        mu_gamma_ = detections;
+        PhdFilterBase::update(detections);
+    }
+
 
 private:
 
@@ -64,30 +68,20 @@ private:
         p.weight = 0;
         return p;
     }
-  
-    // PHDupdate get_default_PHDupdate()
-    // {
-    //     PHDupdate u;
-    //     u.eta = vec{4, arma::fill::zeros};  // Projected detection
-    //     u.S = mat{2,2, arma::fill::zeros};  // Projected sensor covariance
-    //     u.K = mat{4,4, arma::fill::zeros};  // Kalman gain
-    //     u.P = mat{4,4, arma::fill::zeros};  // Updated state covariance
-    //     return u;
-    // }
-
-
 
     Particle SpawnMotionModel(Particle parent)
     {
         Particle spawn_target;
-        spawn_target.state = mvnrnd(vec{0,0,0,0,0,0},diagmat(vec{50,50,50,50,10,10})) + parent.state;
+        spawn_target.state = mvnrnd(vec{0,0,0,0,0,0},diagmat(vec{50,50,10,10,20,20})) + parent.state;
         spawn_target.P = kP_beta + parent.P;
         spawn_target.weight = 0;
         return spawn_target;
     }
-    double SpawnWeight(vec spawn,vec parent){
-        auto n = normpdf(spawn, parent, diagvec(kweight_beta_P));
-        return norm(0.05*n + 0.1*n);
+    double SpawnWeight(vec spawn,vec parent)
+    {
+        // auto n = normpdf(spawn, parent, diagvec(kweight_beta_P));
+        // return norm(0.05*n + 0.1*n);
+        return normpdf(spawn, parent, diagvec(kweight_beta_P))[0];
     }
 
     Particle spawn_particle(const Particle& x) override
@@ -100,20 +94,21 @@ private:
 
     double BirthWeight(vec current_state)
     {
-        double birth_weight = 
-            norm(
-                0.1 * normpdf(current_state, mu_gamma_.col(0), diagvec(kP_gamma)) 
-                + 
-                0.1 * normpdf(current_state, mu_gamma_.col(1), diagvec(kP_gamma))
-            );
-        return birth_weight;
+        // double birth_weight = 
+        //     norm(
+        //         0.1 * normpdf(current_state, mu_gamma_.row(0).t(), diagvec(kP_gamma)) 
+        //         // + 
+        //         // 0.1 * normpdf(current_state, mu_gamma_.row(1), diagvec(kP_gamma))
+        //     );
+        // return birth_weight;
+        return 0.1;
     }
 
     Particle propose_new_born_particle(int i) override
     {
         Particle p;
-        p.weight = BirthWeight(mu_gamma_.col(i)); // not sure about weight
-        p.state = mu_gamma_.col(i);
+        p.weight = BirthWeight(mu_gamma_.row(i).t()); // not sure about weight
+        p.state = mu_gamma_.row(i).t();
         p.P = kP_gamma;
         return p;
     }
