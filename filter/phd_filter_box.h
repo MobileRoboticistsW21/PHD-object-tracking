@@ -28,6 +28,8 @@ public:
         kweight_beta_P = diagmat(vec{75,75,25,25,100,100});
 
         F_ = eye<mat>(6,6);
+        F_(0, 4) = 1;
+        F_(1, 5) = 1;
         Q_ = 4 * eye<mat>(6,6);
         
         H_ = eye<mat>(6,6);
