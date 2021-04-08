@@ -8,10 +8,17 @@ Afterwards, simply use CMakeLists to build the code:
 * mkdir build
 * cd build
 * cmake ..
-* make 
+* make < target >
 
-Currently the code will produce a phd_simulation executable. Running that will demo the code.
+Curretn targets are: 
+* __phd_filter_simulation__: demo example with visualization 
+* __phd_json_sim__: reads data from json file, executes the filter and visulizes.
+* __phd_json_dump__: reads json data and dumps results to a json file for easy use is other environments.
+# Running in colab.
+ 
+TODO: add a colab notebook that sets things up.
 
+Only the phd_json_dump target can be made in colab environemnt. 
 
 # TODO LIST: 
 lots needs to be done. Here is some direction that could prove helpful!

@@ -1,16 +1,12 @@
-#include "phd_filter.h"
-
+#include "filter/phd_filter_2d.h"
 #include "simulator/Ground_Truth.hpp"
 #include "simulator/PositionSensor.hpp"
-
 #include "utils/plotting_utils.hpp"
-
-
 
 int main()
 {
     std::cout << "Starting a simple PHD filter simulation..." << std::endl;
-    phd_filter filter; // Notice (priority medium): Should not be passed that argument, pass parameters instead
+    PhdFilter2d filter; // Notice (priority medium): Should not be passed that argument, pass parameters instead
 
     // int t_steps_ = 3;
     int t_steps_ = 100;

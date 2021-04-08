@@ -1,5 +1,5 @@
 #include <armadillo>
-#include "phd_filter.h"
+#include "phd_filter_base.h"
 
 
 /**
@@ -7,48 +7,15 @@
  * instead setup struct to be passed that contains all necesssary parameters
  */
  // TODO: meaningful constructor
-phd_filter::phd_filter()
+PhdFilterBase::PhdFilterBase()
 {
-    
-    J_k_ = 2;
-    J_beta_ = 2;
-    J_gamma_ = 2;
-    sigma_v_ = 5;
-    p_s_ = 0.99;
-    p_d_ = 0.98;
-    T_ = 0.00001;
-    U_ = 4;
-    J_max_ = 100;
-    mu_gamma_ = join_rows(vec{250, 250, 0, 0}, vec{-250, -250, 0, 0});
-    // t_steps_ = 100;
-    Particle p;
-    p.state = {250, 250, 0, 0};
-    p.P = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}};
-    p.weight = 0.5;
-    x_k_.push_back(p);
-    p.state = {-250, -250, 0, 0};
-    x_k_.push_back(p);
-
-    F_ = join_cols(
-        join_rows(eye<mat>(2, 2), eye<mat>(2, 2)),
-        join_rows(zeros<mat>(2, 2), eye<mat>(2, 2)));
-
-    H_ = join_rows(eye<mat>(2, 2), zeros<mat>(2, 2));
-
-    Q_ = join_cols(
-            join_rows(1.25 * eye<mat>(2,2), 2.5 * eye<mat>(2,2)),
-            join_rows(1.25 * eye<mat>(2,2), 5.0 * eye<mat>(2,2)));
-
-    // R_ = 100 * eye<mat>(2,2); 
-    R_ = 8 * eye<mat>(2,2); 
 }
-
 
 // the higher level function that calls other stuff
 // TODO: need to add more inputs?
 // TODO: functions called in here can become private?
 // TODO: move plotting outside?
-void phd_filter::update(const mat& detections)
+void PhdFilterBase::update(const mat& detections)
 {
     x_pred_.clear();
     
@@ -65,65 +32,35 @@ void phd_filter::update(const mat& detections)
     NormalizeWeights();  // TODO: Check if this is required. Likely is. 
 }
 
-
-Particle phd_filter::SpawnMotionModel(Particle parent){
-    Particle spawn_target;
-    spawn_target.state = mvnrnd(vec{0,0,0,0},diagmat(vec{50,50,10,10})) + parent.state;
-    spawn_target.P = kP_beta + parent.P;
-    spawn_target.weight = 0;
-    return spawn_target;
-}
-double phd_filter::SpawnWeight(vec spawn,vec parent){
-    auto n = normpdf(spawn, parent, diagvec(kweight_beta_P));
-    double spawn_weight = norm(0.05*n + 0.1*n);
-    return spawn_weight;
-}
-
 /** UPDATE
  * This function should return a set of new spawned targets
  */
-void phd_filter::propose_spawned_targets(void)
+void PhdFilterBase::propose_spawned_targets(void)
 {
     for(int it2 = 0; it2 < J_beta_; it2++)        // for each spawning Gaussian
     {
         for(const auto& x : x_k_)                        // for each current target
         {
-            auto pred_target = SpawnMotionModel(x);
-            pred_target.weight = SpawnWeight(pred_target.state, x.state) * x.weight;
-            x_pred_.push_back(pred_target);
+            x_pred_.push_back(spawn_particle(x));
         }
     }
-
     // need to add current targets to x_pred_? after checking survival 
-    
 }
 
-double phd_filter::BirthWeight(vec current_state){
-    double birth_weight = 
-        norm(
-            0.1 * normpdf(current_state, mu_gamma_.col(0), diagvec(kP_gamma)) 
-            + 
-            0.1 * normpdf(current_state, mu_gamma_.col(1), diagvec(kP_gamma))
-        );
-    return birth_weight;
-}
 /** UPDATE
  * This function should return a set of new born targets
  */
-void phd_filter::propose_new_born_targets(void)
+void PhdFilterBase::propose_new_born_targets(void)
 {
     Particle pred_target;
-    for (int it1 = 0; it1 < J_gamma_; it1 ++) {
-        pred_target.weight = BirthWeight(mu_gamma_.col(it1)); // not sure about weight
-        pred_target.state = mu_gamma_.col(it1);
-        pred_target.P = kP_gamma;
-        x_pred_.push_back(pred_target);      // need to declare x_pred_ somewhere 
+    for (int i = 0; i < J_gamma_; i++) 
+    {
+        x_pred_.push_back(propose_new_born_particle(i));      // need to declare x_pred_ somewhere 
     }
-    
     
 }
 
-void phd_filter::propagate_states(void)
+void PhdFilterBase::propagate_states(void)
 {
     for (const auto& x : x_k_)
     {
@@ -136,11 +73,11 @@ void phd_filter::propagate_states(void)
     }
 }
 
-vector<Particle> phd_filter::extract_target_states(){
+vector<Particle> PhdFilterBase::extract_target_states(){
     vector<Particle> extracted_state;
     for(const auto& x : x_k_)
     {
-        if(x.weight > 0.3) 
+        if(x.weight > extraction_weight_threshold_) 
         {
             extracted_state.push_back(x);
         }
@@ -149,7 +86,7 @@ vector<Particle> phd_filter::extract_target_states(){
 }
 
 
-vector<Particle> phd_filter::propose_particles_with_missing_detections()
+vector<Particle> PhdFilterBase::propose_particles_with_missing_detections()
 {
     vector<Particle> x_miss = x_k_;
     for (auto& x : x_miss)
@@ -159,7 +96,7 @@ vector<Particle> phd_filter::propose_particles_with_missing_detections()
     return x_miss;
 }
 
-PHDupdate phd_filter::UpdatePHDComponent(const Particle& p)
+PHDupdate PhdFilterBase::UpdatePHDComponent(const Particle& p)
 {
     PHDupdate u;
     u.eta= H_* p.state;
@@ -171,7 +108,7 @@ PHDupdate phd_filter::UpdatePHDComponent(const Particle& p)
     return u;
 }
 
-void phd_filter::construct_phd_update_components()
+void PhdFilterBase::construct_phd_update_components()
 {
     phd_updates_.clear();
     for (const auto& x : x_pred_)
@@ -180,7 +117,7 @@ void phd_filter::construct_phd_update_components()
     }
 }
 
-void phd_filter::sensor_update(const mat& detections) 
+void PhdFilterBase::sensor_update(const mat& detections) 
 {
     vector<Particle> x_new;
     
@@ -210,7 +147,7 @@ void phd_filter::sensor_update(const mat& detections)
     x_k_ = x_new;
 }
 
-void phd_filter::NormalizeWeights(){
+void PhdFilterBase::NormalizeWeights(){
     double tot = 0.0;
     for(const auto& x : x_k_)
     {
@@ -222,7 +159,7 @@ void phd_filter::NormalizeWeights(){
     }
 }
 
-Particle& phd_filter::get_max_weight_particle(vector<Particle>& particles)
+Particle& PhdFilterBase::get_max_weight_particle(vector<Particle>& particles)
 {
     Particle& heaviest = particles[0];
     for (Particle& particle : particles)
@@ -235,15 +172,15 @@ Particle& phd_filter::get_max_weight_particle(vector<Particle>& particles)
     return heaviest;
 }
 
-double phd_filter::mahalanobis_distance(const Particle& a, const Particle& b)
+double PhdFilterBase::mahalanobis_distance(const Particle& a, const Particle& b)
 {
     arma::vec state_diff = a.state - b.state; 
     return sqrt(as_scalar(state_diff.t() * a.P.i() * state_diff));
 }
 
-Particle phd_filter::merge_particles(const vector<Particle> particles)
+Particle PhdFilterBase::merge_particles(const vector<Particle> particles)
 {
-    Particle merged_p;
+    Particle merged_p = get_default_particle();
     for (const auto& elem : particles) 
     { 
         merged_p.weight += elem.weight; 
@@ -265,7 +202,7 @@ Particle phd_filter::merge_particles(const vector<Particle> particles)
     return merged_p;
 }
 
-void phd_filter::PruningAndMerging(){
+void PhdFilterBase::PruningAndMerging(){
     vector<Particle> pruned_set;
     vector<Particle> heavy_particles;
     for(const auto& x : x_k_)
