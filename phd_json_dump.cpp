@@ -35,6 +35,7 @@ int main()
     reader.parse(data_file, obj);
     
     Json::Value bbs_and_flows(Json::arrayValue);
+    Json::Value bbs_and_flows_extract(Json::arrayValue);
     
     PhdFilterBox filter;
     
@@ -45,12 +46,17 @@ int main()
         filter.update(detections);
 
         bbs_and_flows.append(particles_to_json(filter.get_x_k_()));
+        bbs_and_flows_extract.append(particles_to_json(filter.extract_target_states()));
         
         // stats_for_debugging(filter);
     }
 
     std::ofstream out_file("run_phd_output.json");
     out_file << bbs_and_flows;
+    out_file.close();
+
+    out_file.open("run_phd_output_extract.json");
+    out_file << bbs_and_flows_extract;
     out_file.close();
     std::cout << "Done!" << std::endl;
 
