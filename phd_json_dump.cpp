@@ -33,14 +33,17 @@ int main()
     Json::Reader reader;
     Json::Value obj;
     reader.parse(data_file, obj);
-    
+        
     Json::Value bbs_and_flows(Json::arrayValue);
     Json::Value bbs_and_flows_extract(Json::arrayValue);
     
     PhdFilterBox filter;
-    
+
+    float itr = 0;
     for(const auto& data: obj)
     {
+        std::cout << "\rProgress: " << 100.0 * itr++ / static_cast<float>(obj.size()) << "%" << std::flush;
+        
         arma::mat detections = get_detection_matrix(data);
 
         filter.update(detections);
@@ -51,14 +54,15 @@ int main()
         // stats_for_debugging(filter);
     }
 
-    std::ofstream out_file("run_phd_output.json");
-    out_file << bbs_and_flows;
-    out_file.close();
+    std::ofstream comprehensive_file("all_particles_dump.json"); 
+    comprehensive_file << bbs_and_flows;
+    comprehensive_file.close();
 
-    out_file.open("run_phd_output_extract.json");
-    out_file << bbs_and_flows_extract;
-    out_file.close();
-    std::cout << "Done!" << std::endl;
+    std::ofstream extracted_file("tracks_dump.json"); 
+    extracted_file << bbs_and_flows_extract;
+    extracted_file.close();
+
+    std::cout << std::endl << "Done!" << std::endl;
 
     return 0;
 }
