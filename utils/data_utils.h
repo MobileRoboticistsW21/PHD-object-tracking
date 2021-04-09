@@ -30,6 +30,7 @@ Json::Value particles_to_json(const std::vector<Particle>& particles)
     Json::Value data;
     Json::Value bbs(Json::arrayValue);
     Json::Value flows(Json::arrayValue);
+    Json::Value weights(Json::arrayValue);
     for (const auto& p : particles){
         Json::Value bb(Json::arrayValue);
         bb.append(Json::Value(p.state[0]));
@@ -43,9 +44,13 @@ Json::Value particles_to_json(const std::vector<Particle>& particles)
         flow.append(Json::Value(p.state[4]));
         flow.append(Json::Value(p.state[5]));
         flows.append(flow);
+
+
+        weights.append(Json::Value(p.weight));
     }
     data["bb"] = bbs;
     data["flows"] = flows;
+    data["weights"] = weights;
 
     return data;
 
