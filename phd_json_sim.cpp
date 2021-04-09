@@ -33,7 +33,8 @@ int main()
 
     // std::cout << "enter the relative data file directory: ";
     // std::cin >> file_dir;
-    file_dir = "../data/first_20_frame_optical_res.json";
+    // file_dir = "../data/first_20_frame_optical_res.json";
+    file_dir = "../data/MOT16-14_optical_flow_res.json";
 
     std::ifstream data_file(file_dir);
     if (!data_file.is_open()) std::cout << "Failed to open file." << std::endl;

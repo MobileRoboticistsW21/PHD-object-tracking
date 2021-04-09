@@ -37,7 +37,8 @@ int main()
     Json::Value bbs_and_flows(Json::arrayValue);
     
     PhdFilterBox filter;
-    
+    int count;
+    count = 0;
     for(const auto& data: obj)
     {
         arma::mat detections = get_detection_matrix(data);
@@ -45,11 +46,16 @@ int main()
         filter.update(detections);
 
         bbs_and_flows.append(particles_to_json(filter.get_x_k_()));
-        
+
+        std::cout << count << std::endl;
+        count += 1;        
+        //  if (count==50){
+        //      break;
+        //  }
         // stats_for_debugging(filter);
     }
 
-    std::ofstream out_file("run_phd_output.json");
+    std::ofstream out_file("run_phd_output_50.json");
     out_file << bbs_and_flows;
     out_file.close();
     std::cout << "Done!" << std::endl;

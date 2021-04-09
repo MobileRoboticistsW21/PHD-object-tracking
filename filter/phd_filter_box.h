@@ -28,6 +28,9 @@ public:
         kweight_beta_P = diagmat(vec{75,75,25,25,100,100});
 
         F_ = eye<mat>(6,6);
+        F_(0,4) = 1;
+        F_(1,5) = 1;
+        F_.print();
         Q_ = 4 * eye<mat>(6,6);
         
         H_ = eye<mat>(6,6);
@@ -101,7 +104,7 @@ private:
         //         // 0.1 * normpdf(current_state, mu_gamma_.row(1), diagvec(kP_gamma))
         //     );
         // return birth_weight;
-        return 0.1;
+        return 1/J_gamma_;
     }
 
     Particle propose_new_born_particle(int i) override
