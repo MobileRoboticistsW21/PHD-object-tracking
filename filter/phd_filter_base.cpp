@@ -114,13 +114,21 @@ void PhdFilterBase::construct_phd_update_components()
     }
 }
 
+bool PhdFilterBase::potentially_associated(
+    const Particle& target, 
+    const arma::vec& detection)
+{
+    return true;
+}
+
+
 void PhdFilterBase::sensor_update(const mat& detections) 
 {
     vector<Particle> x_new;
     
     construct_phd_update_components();
     
-    // x_new = propose_particles_with_missing_detections();  // TODO: Confirm the use of this 
+    x_new = propose_particles_with_missing_detections();  // TODO: Confirm the use of this 
     
     for (int z_idx = 0; z_idx < detections.n_rows; z_idx++)
     {
@@ -129,6 +137,7 @@ void PhdFilterBase::sensor_update(const mat& detections)
         {
             Particle& target = x_pred_[x_idx];
             PHDupdate& p_update = phd_updates_[x_idx];
+            if(!potentially_associated(target, z)) continue;
             
             auto distribution = normpdf(z, p_update.eta, diagvec(p_update.S));
             double distribution_mean = as_scalar(mean(distribution));

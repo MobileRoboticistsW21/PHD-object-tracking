@@ -72,6 +72,8 @@ class PhdFilterBase{
          */
         void sensor_update(const mat& detections);
 
+        virtual bool potentially_associated(const Particle& target, const arma::vec& detection);
+
         /**
          * NOTICE: (priority low): simple and seems to be functioning fine
          * @def Normalizes all particle weights

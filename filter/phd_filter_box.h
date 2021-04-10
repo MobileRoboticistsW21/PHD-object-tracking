@@ -12,20 +12,19 @@ public:
         // J_k_ = 2;
         // sigma_v_ = 5;
         
-        p_s_ = 0.99;
-        p_d_ = 0.98;
-        T_ = 0.001; // min weight. Pruning.
-        U_ = 20; 
+        // Updating these two values caused deviation from sensor input
+        p_s_ = 0.8; //0.99;
+        p_d_ = 0.75; //0.98;
+
+        T_ = 0.0001; // min weight. Pruning.
+        U_ = 10; 
         J_max_ = 1000;  // max particles
         
-        // kP_gamma = diagmat(vec{100,100,100,100,25,25});
-        // kP_beta = diagmat(vec{50,50,50,50,10,10});
-        // kweight_beta_P = diagmat(vec{75,75,25,25,100,100});
         J_gamma_ = 0;
         kP_gamma = diagmat(vec{5,5,5,5,5,5});
 
         // Spawns
-        J_beta_ = 0; // 2;
+        J_beta_ = 5; // 2;
         kP_beta = eye<mat>(6, 6);
         kweight_beta_P = eye<mat>(6, 6);
 
@@ -37,7 +36,7 @@ public:
 
         // Sensor
         H_ = eye<mat>(6,6);
-        R_ = 0.1*diagmat(vec{2,2,4,4,4,4});
+        R_ = 0.1*diagmat(vec{2,2,55,55,4,4});
         
         extraction_weight_threshold_ = 0.03;
         
@@ -106,5 +105,15 @@ private:
         p.P = kP_gamma;
         return p;
     }
+
+    bool potentially_associated(
+        const Particle& target, 
+        const arma::vec& detection) override
+    {
+        arma::vec state_diff = target.state - detection; 
+        double dist = sqrt(as_scalar(state_diff.t() * target.P.i() * state_diff));
+        return dist < 50;
+    }
+
 
 };
