@@ -122,7 +122,7 @@ class PhdFilterBase{
 
         ////// Spawn params
         int J_beta_;  // Number of partilces to spawn from each target.
-        mat kP_beta;
+        mat kP_beta;  // Covariance added to a spawned particle
         mat kweight_beta_P;
 
         ////// Motion update:

@@ -22,8 +22,10 @@ int main()
         vector<Particle> particles = filter.extract_target_states();
         // vector<Particle> particles = filter.get_x_k_();
         plt::clf();
+        plt::xlim(-250, 1000);
+        plt::ylim(-1000, 250);
+        plot_particles(particles, 1);
         plot_detections(detections);
-        plot_particles(particles);
         plt::pause(0.0001);
     }
 

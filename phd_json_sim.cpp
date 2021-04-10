@@ -62,8 +62,8 @@ int main()
         plt::xlim(0, 540);
         plt::ylim(0, 960);
         plot_detections(detections);
-        plot_particles(particles, 10);
-        plt::pause(0.000001);
+        plot_particles(particles, 1);
+        plt::pause(0.25);
 
 
 

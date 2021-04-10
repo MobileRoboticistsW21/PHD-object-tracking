@@ -30,26 +30,23 @@ void PhdFilterBase::update(const mat& detections)
 
     PruningAndMerging();
     NormalizeWeights();  // TODO: Check if this is required. Likely is. 
+
+    x_pred_.clear();
 }
 
-/** UPDATE
- * This function should return a set of new spawned targets
- */
+
 void PhdFilterBase::propose_spawned_targets(void)
 {
-    for(int it2 = 0; it2 < J_beta_; it2++)        // for each spawning Gaussian
+    for(int i = 0; i < J_beta_; i++)        // for each spawning Gaussian
     {
         for(const auto& x : x_k_)                        // for each current target
         {
             x_pred_.push_back(spawn_particle(x));
         }
     }
-    // need to add current targets to x_pred_? after checking survival 
 }
 
-/** UPDATE
- * This function should return a set of new born targets
- */
+
 void PhdFilterBase::propose_new_born_targets(void)
 {
     Particle pred_target;

@@ -6,40 +6,43 @@ class PhdFilterBox : public PhdFilterBase
 {
 
 public:
-    PhdFilterBox() 
+ PhdFilterBox() 
     : PhdFilterBase()
     {
         // J_k_ = 2;
         // sigma_v_ = 5;
         
-        J_beta_ = 2;
         p_s_ = 0.99;
         p_d_ = 0.98;
-        T_ = 0.00001;
-        U_ = 4;
-        J_max_ = 100;
+        T_ = 0.001; // min weight. Pruning.
+        U_ = 20; 
+        J_max_ = 1000;  // max particles
         
-        
-        J_gamma_ = 0;  // J_gamma_ = 2;
-        // mu_gamma_ = join_rows(vec{250, 250, 50, 50, 0, 0}, vec{-250, -250, 50, 50, 0, 0}).t();
-        kP_gamma = diagmat(vec{100,100,100,100,25,25});
-        
-        kP_beta = diagmat(vec{50,50,50,50,10,10});
-        kweight_beta_P = diagmat(vec{75,75,25,25,100,100});
+        // kP_gamma = diagmat(vec{100,100,100,100,25,25});
+        // kP_beta = diagmat(vec{50,50,50,50,10,10});
+        // kweight_beta_P = diagmat(vec{75,75,25,25,100,100});
+        J_gamma_ = 0;
+        kP_gamma = diagmat(vec{5,5,5,5,5,5});
 
+        // Spawns
+        J_beta_ = 0; // 2;
+        kP_beta = eye<mat>(6, 6);
+        kweight_beta_P = eye<mat>(6, 6);
+
+        // Motion
         F_ = eye<mat>(6,6);
         F_(0, 4) = 1;
         F_(1, 5) = 1;
-        Q_ = 4 * eye<mat>(6,6);
-        
+        Q_ = diagmat(vec{1.25,1.25,2.5,2.5,4.25,4.25});
+
+        // Sensor
         H_ = eye<mat>(6,6);
-        R_ = 8 * eye<mat>(6,6); 
+        R_ = 0.1*diagmat(vec{2,2,4,4,4,4});
         
-        extraction_weight_threshold_ = 0.02;
+        extraction_weight_threshold_ = 0.03;
         
         // initialize_particles();
     }
-
 
     virtual void update(const mat& detections)
     {
@@ -53,13 +56,8 @@ private:
 
     void initialize_particles()
     {
-        Particle p;
-        p.state = {250, 250, 50, 50, 0, 0};
-        p.P = arma::mat(6,6,arma::fill::zeros);
-        p.weight = 0.5;
-        x_k_.push_back(p);
-        p.state = {-250, -250, 50, 50, 0, 0};
-        x_k_.push_back(p);
+        // Particle p;
+        // x_k_.push_back(p);
     }
 
     Particle get_default_particle()
@@ -96,14 +94,8 @@ private:
 
     double BirthWeight(vec current_state)
     {
-        // double birth_weight = 
-        //     norm(
-        //         0.1 * normpdf(current_state, mu_gamma_.row(0).t(), diagvec(kP_gamma)) 
-        //         // + 
-        //         // 0.1 * normpdf(current_state, mu_gamma_.row(1), diagvec(kP_gamma))
-        //     );
-        // return birth_weight;
-        return 0.1;
+        // return norm(normpdf(current_state, mu_gamma_.row(0).t(), diagvec(kP_gamma)));
+        return 0.25;
     }
 
     Particle propose_new_born_particle(int i) override
