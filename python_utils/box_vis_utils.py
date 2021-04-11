@@ -1,3 +1,5 @@
+import numpy as np
+
 def xywh_to_corners(data):
     """
     Takes a coordinate xywh as input

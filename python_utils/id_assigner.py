@@ -5,7 +5,7 @@ def assign_ids_postfact(data):
     output_0 = np.concatenate([np.array(data[0]['bb']), np.array(data[0]['flows'])], axis=1)
 
     # arbitary idx for frame 0
-    id_0 = np.arange(output_0.shape[0])
+    id_0 = np.arange(output_0.shape[0]) + 1
     data[0]['ids'] = id_0.tolist()
 
 
@@ -54,3 +54,5 @@ def assign_ids_postfact(data):
 
         output_0 = output_1
         id_0 = id_1
+    
+    return data

@@ -54,11 +54,11 @@ int main()
         // stats_for_debugging(filter);
     }
 
-    std::ofstream comprehensive_file("all_particles_dump.json"); 
+    std::ofstream comprehensive_file("../data/output/all_particles_dump.json"); 
     comprehensive_file << bbs_and_flows;
     comprehensive_file.close();
 
-    std::ofstream extracted_file("tracks_dump.json"); 
+    std::ofstream extracted_file("../data/output/tracks_dump.json"); 
     extracted_file << bbs_and_flows_extract;
     extracted_file.close();
 
