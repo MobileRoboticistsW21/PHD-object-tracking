@@ -13,4 +13,4 @@ def xywh_to_corners(data):
     data[:,2] = data[:,0] + data[:,2]
     data[:,3] = data[:,1] + data[:,3]
 
-    return data
+    return data.astype(int)

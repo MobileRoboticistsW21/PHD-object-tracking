@@ -41,7 +41,7 @@ def assign_ids_postfact(data):
             # which ones in id_1 need to be filled with new id
             idx_to_fix = np.where(id_1 == -1)[0]
 
-            new_id = 0
+            new_id = 1
 
             for i in range(output_1.shape[0] - output_0.shape[0]):
                 while new_id in id_1:
