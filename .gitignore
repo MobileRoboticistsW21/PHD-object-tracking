@@ -39,3 +39,6 @@ build/*
 
 # vscode
 .vscode
+
+.ipynb_checkpoints
+*/.ipynb_checkpoints/*
