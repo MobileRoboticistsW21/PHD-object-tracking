@@ -29,7 +29,7 @@ void PhdFilterBase::update(const mat& detections)
     // NormalizeWeights(); // TODO: move normalization into functions that update particles.
 
     PruningAndMerging();
-    NormalizeWeights();  // TODO: Check if this is required. Likely is. 
+    // NormalizeWeights();  // TODO: Check if this is required. Likely is. 
 
     x_pred_.clear();
 }
