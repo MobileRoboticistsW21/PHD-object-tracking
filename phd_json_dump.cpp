@@ -19,6 +19,22 @@ void stats_for_debugging(PhdFilterBox& filter)
     std::cout << "weights: " << wmin << ", " << wmax << "  tot: " << wsum << std::endl;
 }
 
+string get_file_name_from_path(string path)
+{
+    int a = -1;
+    int b = -1;
+    for(auto i = path.size()-1; i > 0; --i)
+    {
+        if (path.at(i) == '/' || path.at(i) == '\\')
+            if (a == -1)
+                a = i+1;
+        else if(path.at(i) == '.') 
+            if (b == -1) 
+                b = i;
+    }
+    return path.substr(a,b);
+}
+
 int main()
 {
     std::string file_dir;
@@ -54,11 +70,12 @@ int main()
         // stats_for_debugging(filter);
     }
 
-    std::ofstream comprehensive_file("../data/output/all_particles_dump.json"); 
+    string out_name = get_file_name_from_path(file_dir);
+    std::ofstream comprehensive_file("../data/output/all_particles_" + out_name); 
     comprehensive_file << bbs_and_flows;
     comprehensive_file.close();
 
-    std::ofstream extracted_file("../data/output/tracks_dump.json"); 
+    std::ofstream extracted_file("../data/output/filtered_" + out_name); 
     extracted_file << bbs_and_flows_extract;
     extracted_file.close();
 

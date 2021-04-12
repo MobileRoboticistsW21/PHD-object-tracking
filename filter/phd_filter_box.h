@@ -11,20 +11,21 @@ public:
     {
         // J_k_ = 2;
         // sigma_v_ = 5;
-        
+        auto cov = 0.1*diagmat(vec{1,1,2,2,4,4});
         // Updating these two values caused deviation from sensor input
         p_s_ = 0.8; //0.99;
         p_d_ = 0.75; //0.98;
 
         T_ = 0.0001; // min weight. Pruning.
-        U_ = 10; 
+        U_ = 20; 
         J_max_ = 1000;  // max particles
         
         J_gamma_ = 0;
-        kP_gamma = diagmat(vec{5,5,5,5,5,5});
+        // kP_gamma = diagmat(vec{5,5,5,5,5,5});
+        kP_gamma = cov;
 
         // Spawns
-        J_beta_ = 5; // 2;
+        J_beta_ = 0; // 2;
         kP_beta = eye<mat>(6, 6);
         kweight_beta_P = eye<mat>(6, 6);
 
@@ -32,11 +33,13 @@ public:
         F_ = eye<mat>(6,6);
         F_(0, 4) = 1;
         F_(1, 5) = 1;
-        Q_ = diagmat(vec{1.25,1.25,2.5,2.5,4.25,4.25});
+        // Q_ = diagmat(vec{1.25,1.25,2.5,2.5,2.5,2.5});
+        Q_ = 0.75*cov;
 
         // Sensor
         H_ = eye<mat>(6,6);
-        R_ = 0.1*diagmat(vec{2,2,55,55,4,4});
+        // R_ = 0.1*diagmat(vec{2,2,5,5,4,4});
+        R_ = 2*cov;
         
         extraction_weight_threshold_ = 0.03;
         
@@ -94,7 +97,7 @@ private:
     double BirthWeight(vec current_state)
     {
         // return norm(normpdf(current_state, mu_gamma_.row(0).t(), diagvec(kP_gamma)));
-        return 0.25;
+        return 0.1;
     }
 
     Particle propose_new_born_particle(int i) override
@@ -112,7 +115,7 @@ private:
     {
         arma::vec state_diff = target.state - detection; 
         double dist = sqrt(as_scalar(state_diff.t() * target.P.i() * state_diff));
-        return dist < 50;
+        return dist < 100;
     }
 
 

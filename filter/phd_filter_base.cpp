@@ -26,7 +26,7 @@ void PhdFilterBase::update(const mat& detections)
     propagate_states();
 
     sensor_update(detections);
-    NormalizeWeights(); // TODO: move normalization into functions that update particles.
+    // NormalizeWeights(); // TODO: move normalization into functions that update particles.
 
     PruningAndMerging();
     NormalizeWeights();  // TODO: Check if this is required. Likely is. 
