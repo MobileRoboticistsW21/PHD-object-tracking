@@ -11,22 +11,19 @@ using namespace arma;
 
 struct Particle
 {
-   vec state; // 4x1 vector [x, y, Vx, Vy]
-   mat P    ; // 4x4 covariance
-   double weight = 0; // particle weight
+   vec state;
+   mat P;
+   double weight = 0;
 };
 
 struct PHDupdate
 {
-    vec eta; // Projected detection
+    vec eta;  // Projected detection
     mat S  ;  // Projected sensor covariance
     mat K  ;  // Kalman gain
     mat P  ;  // Updated state covariance
 };
 
-// Notice (priorty Medium): This should house the settings needed for the filter eventually. 
-struct PHD_filter_parameters
-{};
 
 class PhdFilterBase{
     public:
@@ -38,7 +35,7 @@ class PhdFilterBase{
         void update(const mat& detections);
 
         /**
-         * NOTICE: (priority Low): not ideal, we should remove it.
+         * NOTICE: Not ideal. Mainly for debugging.
          */
         vector<Particle> get_x_k_()
         { 
@@ -46,62 +43,54 @@ class PhdFilterBase{
         }  
       
         /**
-         * NOTICE: (priority low): simple and seems to be functioning fine
          * @def get targets from tracked particles. 
          * @return particles with weight higher than a set threashold.
          */
         vector<Particle> extract_target_states();
 
     protected:
-
-        // TODO: make this local and have it derive a default from x_k_ 
+        
+        /**
+         * NOTICE: This is not necessary if better implemented.
+         * Currently this is only required for the sensor update function.
+         */
         virtual Particle get_default_particle() = 0;
 
         /**
-         * NOTICE: {priority low} functioning okay 
          * @def: performs linear motion update.
          */
         void propagate_states(void);
 
         /**
-         * NOTICE: {priority medium} Seems working... not well inspected  
-         * TODO: Change detections to be columns rather than rows.
-         *
          * @def: performs sensor update
          * @param detections: 2xN matrix of N detections (one per row)
          */
         void sensor_update(const mat& detections);
 
+        /**
+         * @def Determines whether the detection is close enough to be considered 
+         * associated with a track. the main purpose of this is code speedup.
+         */
         virtual bool potentially_associated(const Particle& target, const arma::vec& detection);
 
         /**
-         * NOTICE: (priority low): simple and seems to be functioning fine
          * @def Normalizes all particle weights
          */
         void NormalizeWeights(); 
         
         /**
-         * NOTICE: (priority low): simple and seems to be functioning fine
-                   BUT: the function can be sped up using a priority queue and less copying.
          * @def Merges particles of low manhalanobis distance proximity. 
          *      If many particles remain (configurable) the ones with lower weight are discarded. 
          */
         void PruningAndMerging();
 
-        /**
-         * NOTIE: THIS CURRENTLY is not being used. 
-         */
         vector<Particle> propose_particles_with_missing_detections();
 
-        // spawn related methods
-        void propose_spawned_targets(void); // Notice (priority Medium-high) Currently not implemented
+        void propose_spawned_targets(void);
         virtual Particle spawn_particle(const Particle& x) = 0;
-        // Particle SpawnMotionModel(Particle);
-        // double SpawnWeight(vec,vec);
         
-        void propose_new_born_targets(void); // Notice (priority Medium-high)Currently not implemented
+        void propose_new_born_targets(void);
         virtual Particle propose_new_born_particle(int i) = 0;
-        // double BirthWeight(vec);
 
         void construct_phd_update_components();
         PHDupdate UpdatePHDComponent(const Particle&); 
@@ -118,9 +107,9 @@ class PhdFilterBase{
         vector<PHDupdate> phd_updates_; // phd update components
 
         ////// Birth params
-        mat mu_gamma_;
-        int J_gamma_;
-        mat kP_gamma;
+        mat mu_gamma_;  // States of new born particles
+        int J_gamma_;  // New born particles' covariance
+        mat kP_gamma; 
 
         ////// Spawn params
         int J_beta_;  // Number of partilces to spawn from each target.
@@ -148,11 +137,4 @@ class PhdFilterBase{
         
         ////// Extraction
         double extraction_weight_threshold_;
-
-        // /////// unsorted
-        // int J_k_;
-        // int sigma_v_;
-        // // Constant variables
-        // const mat kInit_covP={{100,0,0,0},{0,100,0,0},{0,0,10,0},{0,0,0,10}};
-        
 };
