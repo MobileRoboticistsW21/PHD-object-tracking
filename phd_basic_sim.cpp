@@ -24,7 +24,7 @@ int main()
         plt::clf();
         plt::xlim(-250, 1000);
         plt::ylim(-1000, 250);
-        plot_particles(particles, 1);
+        plot_particles(particles, 50);
         plot_detections(detections);
         plt::pause(0.0001);
     }

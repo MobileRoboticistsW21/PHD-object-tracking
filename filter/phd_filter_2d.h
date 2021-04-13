@@ -15,10 +15,10 @@ public:
         
         J_beta_ = 2;
         J_gamma_ = 2;
-        p_s_ = 0.99;
+        p_s_ = 0.8;
         p_d_ = 0.98;
         T_ = 0.00001;
-        U_ = 4;
+        U_ = 10;
         J_max_ = 100;
         mu_gamma_ = join_rows(vec{250, 250, 0, 0}, vec{-250, -250, 0, 0});
         kP_gamma = diagmat(vec{100,100,25,25});
@@ -49,7 +49,7 @@ private:
     {
         Particle p;
         p.state = {250, 250, 0, 0};
-        p.P = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}};
+        p.P = arma::eye(4,4)*0.001;
         p.weight = 0.5;
         x_k_.push_back(p);
         p.state = {-250, -250, 0, 0};
@@ -109,7 +109,7 @@ private:
     Particle propose_new_born_particle(int i) override
     {
         Particle p;
-        p.weight = BirthWeight(mu_gamma_.col(i)); // not sure about weight
+        p.weight = 0; // BirthWeight(mu_gamma_.col(i)); // not sure about weight
         p.state = mu_gamma_.col(i);
         p.P = kP_gamma;
         return p;

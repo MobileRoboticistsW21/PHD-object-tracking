@@ -9,13 +9,13 @@ public:
  PhdFilterBox() 
     : PhdFilterBase()
     {
-        arma::mat cov = 0.25*diagmat(vec{1,1,40,40,20,20});
+        arma::mat cov = diagmat(vec{1,1,8,8,5,5});
         // Updating these two values caused deviation from sensor input
-        p_s_ = 0.8; //0.99;
-        p_d_ = 0.5; //0.98;
+        p_s_ = 0.9; //0.99;
+        p_d_ = 0.9;  //0.75; //0.98;
 
         T_ = 0.0001; // min weight. Pruning.
-        U_ = 30; 
+        U_ = 40; 
         J_max_ = 1000;  // max particles
         
         J_gamma_ = 0;
@@ -23,9 +23,9 @@ public:
         kP_gamma = cov;
 
         // Spawns
-        J_beta_ = 5; // 2;
-        kP_beta = cov;
-        kweight_beta_P = cov;
+        J_beta_ = 0; // 2;
+        kP_beta = 0.5*cov;
+        kweight_beta_P = 0.5*cov;
         // kP_beta = 0.5*eye<mat>(6, 6);
         // kweight_beta_P = 0.5*eye<mat>(6, 6);
 
@@ -34,14 +34,14 @@ public:
         F_(0, 4) = 1;
         F_(1, 5) = 1;
         // Q_ = diagmat(vec{1.25,1.25,2.5,2.5,2.5,2.5});
-        Q_ = 0.75*cov;
+        Q_ = 0.05*cov;
 
         // Sensor
         H_ = eye<mat>(6,6);
         // R_ = 0.1*diagmat(vec{2,2,5,5,4,4});
-        R_ = cov;
+        R_ = 1*cov;
         
-        extraction_weight_threshold_ = 0.03;
+        extraction_weight_threshold_ = 0.3;
     }
 
     virtual void update(const mat& detections)
