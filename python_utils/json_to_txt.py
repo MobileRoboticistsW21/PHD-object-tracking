@@ -6,7 +6,7 @@ def bbox_convert(c_w_h):
     c_x, c_y = c_w_h[0], c_w_h[1]
     w , h = c_w_h[2], c_w_h[3]
     tl_x = c_x - w / 2
-    tl_y = c_y + h / 2
+    tl_y = c_y - h / 2
     return [tl_x, tl_y, w, h]
 
 def json_to_txt(json_file_name):
