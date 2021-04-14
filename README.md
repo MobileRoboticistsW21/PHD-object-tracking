@@ -44,7 +44,7 @@ Use the function in json_to_txt.py to convert the json output file from PHD filt
 In the .\MOTChallengeEvalKit-master directory, run `python .\MOT\evalMOT.py` and should get the evaluation metrics of MOTA, MOTP, etc.
 
 
-## Some possible imporovements
+## Some possible improvements
 
 1. Lack of unit testing: The filter is not vetted extensively enough to ensure no bugs but it does not fail to run through.
 
