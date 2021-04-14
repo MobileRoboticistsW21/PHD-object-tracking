@@ -9,38 +9,33 @@ public:
  PhdFilterBox() 
     : PhdFilterBase()
     {
-        // J_k_ = 2;
-        // sigma_v_ = 5;
-        
+        arma::mat cov = diagmat(vec{1,1,8,8,5,5});
         // Updating these two values caused deviation from sensor input
-        p_s_ = 0.8; //0.99;
-        p_d_ = 0.75; //0.98;
-
+        p_s_ = 0.9;
+        p_d_ = 0.9;
         T_ = 0.0001; // min weight. Pruning.
-        U_ = 10; 
+        U_ = 40; 
         J_max_ = 1000;  // max particles
         
         J_gamma_ = 0;
-        kP_gamma = diagmat(vec{5,5,5,5,5,5});
+        kP_gamma = cov;
 
         // Spawns
-        J_beta_ = 5; // 2;
-        kP_beta = eye<mat>(6, 6);
-        kweight_beta_P = eye<mat>(6, 6);
+        J_beta_ = 0; // 2;
+        kP_beta = 0.5*cov;
+        kweight_beta_P = 0.5*cov;
 
         // Motion
         F_ = eye<mat>(6,6);
         F_(0, 4) = 1;
         F_(1, 5) = 1;
-        Q_ = diagmat(vec{1.25,1.25,2.5,2.5,4.25,4.25});
+        Q_ = 0.05*cov;
 
         // Sensor
         H_ = eye<mat>(6,6);
-        R_ = 0.1*diagmat(vec{2,2,55,55,4,4});
+        R_ = 1*cov;
         
-        extraction_weight_threshold_ = 0.03;
-        
-        // initialize_particles();
+        extraction_weight_threshold_ = 0.3;
     }
 
     virtual void update(const mat& detections)
@@ -52,12 +47,6 @@ public:
 
 
 private:
-
-    void initialize_particles()
-    {
-        // Particle p;
-        // x_k_.push_back(p);
-    }
 
     Particle get_default_particle()
     {
@@ -71,16 +60,15 @@ private:
     Particle SpawnMotionModel(Particle parent)
     {
         Particle spawn_target;
-        spawn_target.state = mvnrnd(vec{0,0,0,0,0,0},diagmat(vec{50,50,10,10,20,20})) + parent.state;
+        spawn_target.state = mvnrnd(vec{0,0,0,0,0,0}, parent.P) + parent.state;
         spawn_target.P = kP_beta + parent.P;
         spawn_target.weight = 0;
         return spawn_target;
     }
     double SpawnWeight(vec spawn,vec parent)
-    {
-        // auto n = normpdf(spawn, parent, diagvec(kweight_beta_P));
-        // return norm(0.05*n + 0.1*n);
-        return normpdf(spawn, parent, diagvec(kweight_beta_P))[0];
+    {        
+        // return normpdf(spawn, parent, diagvec(kweight_beta_P))[0];
+        return 0.25;
     }
 
     Particle spawn_particle(const Particle& x) override
@@ -112,7 +100,7 @@ private:
     {
         arma::vec state_diff = target.state - detection; 
         double dist = sqrt(as_scalar(state_diff.t() * target.P.i() * state_diff));
-        return dist < 50;
+        return dist < 80;
     }
 
 

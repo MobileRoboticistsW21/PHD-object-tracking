@@ -26,10 +26,10 @@ void PhdFilterBase::update(const mat& detections)
     propagate_states();
 
     sensor_update(detections);
-    NormalizeWeights(); // TODO: move normalization into functions that update particles.
+    // NormalizeWeights(); // TODO: move normalization into functions that update particles.
 
     PruningAndMerging();
-    NormalizeWeights();  // TODO: Check if this is required. Likely is. 
+    // NormalizeWeights();  // TODO: Check if this is required. Likely is. 
 
     x_pred_.clear();
 }
@@ -132,6 +132,8 @@ void PhdFilterBase::sensor_update(const mat& detections)
     
     for (int z_idx = 0; z_idx < detections.n_rows; z_idx++)
     {
+        double tot_w = 0; 
+        int newly_added = 0;
         vec z = arma::vectorise(detections.row(z_idx));
         for (int x_idx = 0; x_idx < x_pred_.size(); x_idx++)
         {
@@ -148,6 +150,14 @@ void PhdFilterBase::sensor_update(const mat& detections)
             detected_target.P = p_update.P;
 
             x_new.push_back(detected_target);
+            tot_w += detected_target.weight;
+            ++newly_added;
+        }
+        
+        for (int x_idx = 0; x_idx < newly_added; x_idx++)
+        {
+            int i = x_new.size() - 1 - x_idx;
+            x_new[i].weight = x_new[i].weight / tot_w;
         }
     }
     x_k_ = x_new;
