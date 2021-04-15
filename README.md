@@ -6,6 +6,10 @@ Based on the <a href="http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.1
 
 Although lacking unit-testing, the code sets up some abstraction, debuggning, and visualization tools to facilitate expantion and further development.
 
+This repository is a sister repository to this <a href="https://github.com/MobileRoboticistsW21/Mask_RCNN_with_Optical_Flow"> Mask RCNN repo</a>. Using the Mask RCNN repo we augmented MOT data with optical flow and set up a PhdFilterBox class to track the 6 dimensional moving boxes.
+
+We provided <a href="https://drive.google.com/drive/folders/1BZhLONDeXmLR0zSFQNEjoi1ak9FUYFmJ?usp=sharing">sample preprocessed MOT data</a> in the linked Google Drive folder.
+
 ## Installing dependencies 
 
 If using a linux machine running `./setup.sh` should install all needed software
@@ -53,3 +57,7 @@ In the .\MOTChallengeEvalKit-master directory, run `python .\MOT\evalMOT.py` and
     * Some processing loops (e.g. major sensor update) could be, at least partly, substituted by linear algebra equations to allow for faster processing.
     * Some global variables could be removed from the global scope and housed in functions where they are used (e.g. birth and spawn variables). This would increase code clarity and make it less susceptible to bugs.
     * Template code based on state size. Reducing dinamicity of memory could increase speed, clarity of code use, and rid the code of the default_particle function required for the sensor update step.
+
+3. Advanced birth and spawn models: those models are currently very rudimentary.
+
+4. More stable use of data: the detector provided has vastly varying width and height which means that the center speed will oscilate as the box dimensions change. There might be better ways to track bounding boxes and than the selected representation.
