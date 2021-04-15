@@ -8,6 +8,7 @@ def xywh_to_corners(data):
     """
     data = np.array(data)
     data = data.astype(float)
+    if data.size == 0 : return data
     data[:,0] = data[:,0] - data[:,2]/2
     data[:,1] = data[:,1] - data[:,3]/2
     data[:,2] = data[:,0] + data[:,2]

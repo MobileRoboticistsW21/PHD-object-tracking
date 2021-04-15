@@ -1,5 +1,10 @@
 # Gaussian Mixture Probability Hypothesis Density Filter
 
+
+![Alt Text](data/DemoMOT16-09.gif)
+
+
+
 This code base is admittedly a work-in-progress implementation of the probability hypothesis density filter. 
 
 Based on the <a href="http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.148.7889&rep=rep1&type=pdf">GM-PHD proposed by Vo _et. al._</a>, the code includes an implementation for a toy problem as well as one for tracking bounding boxes. 
